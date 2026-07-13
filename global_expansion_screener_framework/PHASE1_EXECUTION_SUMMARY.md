@@ -32,7 +32,7 @@ You are executing **Phase 1 of the global expansion screener geographic extensio
 ### Your Verified Credentials
 
 ```
-FRED_API_KEY:        REDACTED_FRED_API_KEY  ✅
+FRED_API_KEY:        <REDACTED-set-FRED_API_KEY-in-.env.providers>  ✅
 SCREENER_EMAIL:      umashankartd1991@gmail.com         ✅
 SCREENER_PASSWORD:   REDACTED_PASSWORD                       ✅
 ```
@@ -51,7 +51,7 @@ https://colab.research.google.com
 ```
 🔑 Secrets → Add new secret
   
-FRED_API_KEY = REDACTED_FRED_API_KEY
+FRED_API_KEY = <REDACTED-set-FRED_API_KEY-in-.env.providers>
 SCREENER_EMAIL = umashankartd1991@gmail.com
 SCREENER_PASSWORD = REDACTED_PASSWORD
 ```
@@ -141,7 +141,7 @@ Cell 7 (FRED):          Sequential (fast anyway)
 ## 📋 Pre-Launch Verification Checklist
 
 - [ ] Have Gmail account (umashankartd1991@gmail.com) ✅
-- [ ] Have FRED API key (REDACTED_FRED_API_KEY) ✅
+- [ ] Have FRED API key (<REDACTED-set-FRED_API_KEY-in-.env.providers>) ✅
 - [ ] Have Screener.in credentials (email + password) ✅
 - [ ] Downloaded COLAB_PHASE1_SETUP.md ✅
 - [ ] Ready to dedicate 5-10 hours over next 7 days ✅

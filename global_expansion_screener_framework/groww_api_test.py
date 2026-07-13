@@ -9,9 +9,11 @@ import json
 from datetime import datetime, timedelta
 import os
 
-# Load credentials
-API_KEY = "REDACTED_GROWW_API_KEY"
-API_SECRET = "REDACTED_GROWW_SECRET"
+# Load credentials from .env.providers (gitignored) -- never hardcode API keys/secrets here
+API_KEY = os.getenv("GROW_API_KEY")
+API_SECRET = os.getenv("GROW_API_SECRET")
+if not API_KEY or not API_SECRET:
+    raise SystemExit("Set GROW_API_KEY and GROW_API_SECRET in .env.providers before running this test.")
 
 print("="*80)
 print("GROWW API TEST - Indian Stock Data Integration")

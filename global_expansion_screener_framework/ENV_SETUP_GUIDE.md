@@ -4,14 +4,14 @@
 
 ### 1️⃣ FRED API Key ✅ (You Have It!)
 
-**Your API key is registered:** `REDACTED_FRED_API_KEY`
+**Your API key is registered:** `<REDACTED-set-FRED_API_KEY-in-.env.providers>`
 
 **Add to environment:**
 
 **Option A: Local .env file (Secure)**
 ```bash
 # Create ~/.zshrc_bhavcopy (add to .zshrc to load it)
-export FRED_API_KEY="REDACTED_FRED_API_KEY"
+export FRED_API_KEY="<REDACTED-set-FRED_API_KEY-in-.env.providers>"
 export SCREENER_EMAIL="your_email@example.com"
 export SCREENER_PASSWORD="your_password"
 
@@ -22,7 +22,7 @@ source ~/.zshrc_bhavcopy
 **Option B: Add to shell profile (Permanent)**
 ```bash
 # Add to ~/.zshrc or ~/.bashrc
-echo 'export FRED_API_KEY="REDACTED_FRED_API_KEY"' >> ~/.zshrc
+echo 'export FRED_API_KEY="<REDACTED-set-FRED_API_KEY-in-.env.providers>"' >> ~/.zshrc
 echo 'export SCREENER_EMAIL="your_email@example.com"' >> ~/.zshrc
 echo 'export SCREENER_PASSWORD="your_password"' >> ~/.zshrc
 

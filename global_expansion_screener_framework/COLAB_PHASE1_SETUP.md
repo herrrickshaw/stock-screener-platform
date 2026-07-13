@@ -18,7 +18,7 @@ import os
 import sys
 
 # Set your credentials (or use Google Secrets for security)
-os.environ['FRED_API_KEY'] = 'REDACTED_FRED_API_KEY'
+os.environ['FRED_API_KEY'] = '<REDACTED-set-FRED_API_KEY-in-.env.providers>'
 os.environ['SCREENER_EMAIL'] = 'your_email@screener.in'
 os.environ['SCREENER_PASSWORD'] = 'your_password'
 
@@ -517,7 +517,7 @@ print("  3. Expected completion: July 16-23, 2026")
 Left sidebar → Secrets 🔑 → Add new secret
 
 Name: FRED_API_KEY
-Value: REDACTED_FRED_API_KEY
+Value: <REDACTED-set-FRED_API_KEY-in-.env.providers>
 
 Name: SCREENER_EMAIL
 Value: your_email@screener.in
