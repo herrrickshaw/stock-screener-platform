@@ -1,6 +1,9 @@
 # 🌍 Global Stock Screening System
 **Production-ready multi-market stock analysis with OCaml, universal screens & validation**
 
+> **⚠️ RECONCILED 2026-07-14 — the "production-ready" and return claims in this README are not validated.**
+> The 22.4% blended-return figure and the underlying "Piotroski quality dominates all markets" premise trace back to a 272-stock sample, never confirmed against the account's actual rigorous point-in-time backtest (SEC EDGAR + yfinance, fold-cross-validated) — which reaches the opposite conclusion for the US and shows quality signals work only as a breakout-confirmation overlay elsewhere. See [`STOCK_ANALYSIS_MASTER_SUMMARY.md` in herrrickshaw/BMS_analysis_battery](https://github.com/herrrickshaw/BMS_analysis_battery/blob/main/STOCK_ANALYSIS_MASTER_SUMMARY.md) for the reconciled, source-linked recommendations before trusting this system's output. (This README also references several docs — `QUICK_START.md`, `INTEGRATED_SYSTEM_SUMMARY.md`, `MAILER_INTEGRATION_GUIDE.md`, `DEPLOYMENT_CHECKLIST.md`, `SETUP_AND_REQUIREMENTS.md` — that don't exist in this repo; those links are stale and unrelated to this banner.)
+
 ---
 
 ## 🎯 What This Is
@@ -94,7 +97,7 @@ open DAILY_SCREENING_REPORT.html
 
 ## 🎉 Status
 
-✅ **PRODUCTION READY**
+🔴 **SUPERSEDED (2026-07-14)** — see reconciliation banner at top of this file; original claim was ✅ PRODUCTION READY
 
 - All components built and tested
 - Complete documentation provided
