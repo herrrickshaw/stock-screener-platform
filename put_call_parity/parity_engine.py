@@ -19,9 +19,9 @@ which simplifies to:
 
 Trading signals:
     δ > +threshold  → call is expensive / put is cheap
-        Action: SELL call, BUY put, SELL futures  (synthetic short futures vs real short)
+        Action: SELL call, BUY put, BUY futures   (conversion: synthetic short hedged by real long)
     δ < -threshold  → put is expensive / call is cheap
-        Action: BUY call, SELL put, BUY futures   (synthetic long futures vs real long)
+        Action: BUY call, SELL put, SELL futures  (reversal: synthetic long hedged by real short)
 """
 
 import math
@@ -246,8 +246,8 @@ class ParityEngine:
             raw_dev = obs_neutral - theoretical
 
             # Determine if deviation is exploitable in either direction
-            # raw_dev > 0 → call relatively expensive → sell call, buy put, sell futures
-            # raw_dev < 0 → put relatively expensive → buy call, sell put, buy futures
+            # raw_dev > 0 → call relatively expensive → sell call, buy put, buy futures (conversion)
+            # raw_dev < 0 → put relatively expensive → buy call, sell put, sell futures (reversal)
             abs_dev = abs(raw_dev)
             direction = "NONE"
             if raw_dev > cfg.min_deviation:
