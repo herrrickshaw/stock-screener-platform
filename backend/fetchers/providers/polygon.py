@@ -98,8 +98,8 @@ class PolygonProvider(DataProvider):
                         ticker=ticker, source='polygon',
                         cmp=cmp,
                         volume=int(day.get('v', 0)) or None,
-                        high_52w=_safe_float(snap.get('day', {}).get('h')),
-                        low_52w=_safe_float(snap.get('day', {}).get('l')),
+                        # The snapshot only has today's high/low, which is not the
+                        # 52-week range; leave high_52w/low_52w for another provider.
                         ret_1d=ret_1d,
                     )
                 except Exception as exc:
