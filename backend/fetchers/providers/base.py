@@ -150,16 +150,22 @@ def compute_technicals(
         if bb_range > 0:
             bb_pct = round((cmp - bb_lower) / bb_range, 3)
 
+    # High/low/close aligned by date: a bar missing any of the three is dropped from all
+    # three (separately dropna'd series zipped by position pair highs with wrong closes).
+    hlc = None
+    if highs is not None and lows is not None:
+        hlc = pd.concat([highs.rename('h'), lows.rename('l'), closes.rename('c')],
+                        axis=1, join='inner').dropna()
+
     # ── ATR-14 (Wilder's) — needs highs/lows ─────────────────────────────────
     atr_14 = None
-    if highs is not None and lows is not None:
-        h_s = highs.dropna()
-        l_s = lows.dropna()
-        min_len = min(len(h_s), len(l_s), n)
+    if hlc is not None:
+        h_s, l_s, c_hl = hlc['h'], hlc['l'], hlc['c']
+        min_len = len(hlc)
         if min_len >= 15:
             h_a = h_s.iloc[-min_len:].values
             l_a = l_s.iloc[-min_len:].values
-            c_a = closes.iloc[-min_len:].values
+            c_a = c_hl.iloc[-min_len:].values
             # True Range vectors (skip first bar — no previous close)
             tr_hl   = h_a[1:] - l_a[1:]
             tr_hpc  = abs(h_a[1:] - c_a[:-1])
@@ -171,12 +177,11 @@ def compute_technicals(
 
     # ── Stochastic %K/%D (14/3) — needs highs/lows ───────────────────────────
     stoch_k = stoch_d = None
-    if highs is not None and lows is not None:
-        h_s = highs.dropna()
-        l_s = lows.dropna()
-        min_len = min(len(h_s), len(l_s), n)
+    if hlc is not None:
+        h_s, l_s = hlc['h'], hlc['l']
+        min_len = len(hlc)
         if min_len >= 17:  # 14 for %K + 3 for %D
-            c_s  = closes.iloc[-min_len:]
+            c_s  = hlc['c'].iloc[-min_len:]
             h_s2 = h_s.iloc[-min_len:]
             l_s2 = l_s.iloc[-min_len:]
             h_14 = h_s2.rolling(14).max()
