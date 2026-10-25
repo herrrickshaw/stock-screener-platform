@@ -21,7 +21,7 @@ If Screener.in pre-computed Piotroski score is present it is used directly.
 Signal: BUY >= 8, WATCH >= 6, AVOID <= 5.
 """
 import pandas as pd
-from column_map import completeness, sanitize_result
+from column_map import completeness, first_present, sanitize_result
 
 REQUIRED_FIELDS = [
     'roa', 'ocf', 'net_profit', 'total_assets',
@@ -75,7 +75,7 @@ def _score(row: pd.Series) -> dict:
     f['F7_no_dilution'] = None
 
     # F8: operating margin > 20%
-    opm = row.get('opm') or row.get('net_profit_margin')
+    opm = first_present(row, 'opm', 'net_profit_margin')
     f['F8_operating_margin'] = (opm > 20) if pd.notna(opm) else None
 
     # F9: asset turnover
@@ -90,7 +90,8 @@ def _score(row: pd.Series) -> dict:
         score = int(precomputed)
         f['_note'] = None  # marks that score came from Screener.in
     else:
-        score = sum(1 for v in f.values() if v is True)
+        # Criteria are numpy.bool_ for DataFrame rows, so `v is True` never matched.
+        score = sum(1 for v in f.values() if v is not None and bool(v))
 
     signal = 'BUY' if score >= 8 else 'WATCH' if score >= 6 else 'AVOID'
 
