@@ -68,7 +68,9 @@ def _r(v) -> float | None:
 
 
 def _b(v) -> bool | None:
-    if v is None:
+    # Unevaluated criteria are NaN (not None) in an object Series under pandas>=3,
+    # and bool(nan) is True — so test for missing first.
+    if v is None or (isinstance(v, float) and math.isnan(v)):
         return None
     try:
         return bool(v)

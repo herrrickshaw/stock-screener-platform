@@ -92,6 +92,18 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def first_present(row, *keys):
+    """First of ``keys`` whose value is present (not None/NaN), else None.
+
+    ``a or b`` is wrong for these rows: NaN is truthy (so a blank cell never falls back)
+    and 0 is falsy (so a genuine zero is skipped)."""
+    for k in keys:
+        v = row.get(k)
+        if v is not None and pd.notna(v):
+            return v
+    return None
+
+
 def completeness(row: pd.Series, required_fields: list[str]) -> float:
     if not required_fields:
         return 100.0
