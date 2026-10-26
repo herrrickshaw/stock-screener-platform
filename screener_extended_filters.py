@@ -15,6 +15,7 @@ All criteria are independent and can be combined for multi-filter screening.
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Dict, Tuple
 from enum import Enum
 
@@ -1048,8 +1049,6 @@ def main():
         "sample_stocks": list(SAMPLE_STOCKS.keys()),
     }
 
-    import json
-    from pathlib import Path
     with open(results_file, 'w') as f:
         json.dump(results_data, f, indent=2)
 

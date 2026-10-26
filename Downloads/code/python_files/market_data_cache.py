@@ -221,19 +221,19 @@ class MarketCache:
                               f"(total {len(combined)})")
                     return combined
                 return existing
-        else:
-            # Cold start — download full history
-            start = date.today() - timedelta(days=OHLC_YEARS * 365 + 30)
-            df    = self._yf_download_single(ticker, start=start)
-            if df.empty:
-                return df
-            df = self._clean_ohlc(df)
-            self._write_parquet(path, df)
-            self._update_meta(key, path, df)
-            if self.verbose:
-                print(f"  Cache created: {ticker} {len(df)} rows "
-                      f"({df.index.min().date()} – {df.index.max().date()})")
+        # Cold start — or a cached file with no meta entry (index lost/rebuilt):
+        # download the full history and re-register it.
+        start = date.today() - timedelta(days=OHLC_YEARS * 365 + 30)
+        df    = self._yf_download_single(ticker, start=start)
+        if df.empty:
             return df
+        df = self._clean_ohlc(df)
+        self._write_parquet(path, df)
+        self._update_meta(key, path, df)
+        if self.verbose:
+            print(f"  Cache created: {ticker} {len(df)} rows "
+                  f"({df.index.min().date()} – {df.index.max().date()})")
+        return df
 
     def get_ohlc_bulk(self, tickers: list, force: bool = False,
                       workers: int = 1) -> dict:
