@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 import requests

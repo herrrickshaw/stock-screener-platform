@@ -118,6 +118,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from typing import List, Optional
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
