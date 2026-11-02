@@ -20,3 +20,9 @@ def test_bare_ticker(raw, bare):
 ])
 def test_market_from_ticker(ticker, market):
     assert _market_from_ticker(ticker) == market
+
+
+def test_history_keeps_legacy_private_names():
+    from fetchers import history, tickers
+    assert history._bare_ticker is tickers.bare_ticker
+    assert history._market_from_ticker is tickers.market_from_ticker

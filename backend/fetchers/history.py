@@ -12,6 +12,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta
 from typing import Optional
 
+from fetchers.tickers import bare_ticker as _bare_ticker  # noqa: E402  (kept for existing callers)
+from fetchers.tickers import market_from_ticker as _market_from_ticker  # noqa: E402
+
 log = logging.getLogger(__name__)
 
 try:
@@ -175,45 +178,6 @@ def fetch_current_price(yf_ticker: str) -> dict:
         return {'error': str(exc)[:120]}
 
 
-def _bare_ticker(yf_ticker: str) -> str:
-    """Strip known market suffixes for Cassandra lookup."""
-    SUFFIXES = {'.NS', '.BO', '.T', '.KS', '.KQ', '.SS', '.SZ', '.HK', '.TO', '.V'}
-    upper = yf_ticker.upper()
-    for sfx in SUFFIXES:
-        if upper.endswith(sfx):
-            return yf_ticker[:len(yf_ticker) - len(sfx)]
-    return yf_ticker
-
-
-_EUROPE_SUFFIXES = {
-    # Euronext
-    'PA', 'AS', 'BR', 'LS', 'MI', 'IR', 'OL',
-    # Deutsche Boerse
-    'DE', 'F',
-    # Nasdaq Nordic & Baltic
-    'ST', 'HE', 'CO', 'VS', 'TL', 'RG',
-    # BME / others
-    'MC', 'WA', 'AT', 'VI', 'L', 'SW', 'PR', 'RO', 'BD',
-}
-
-
-def _market_from_ticker(yf_ticker: str) -> str:
-    sfx = yf_ticker.rsplit('.', 1)[-1].upper() if '.' in yf_ticker else ''
-    _MAP = {
-        'NS': 'india', 'BO': 'india',
-        'T':  'japan',
-        'KS': 'korea', 'KQ': 'korea',
-        'SS': 'china', 'SZ': 'china',
-        'HK': 'hong_kong',
-        'TO': 'canada', 'V': 'canada',
-    }
-    if sfx in _MAP:
-        return _MAP[sfx]
-    if sfx in _EUROPE_SUFFIXES:
-        return 'europe'
-    return 'us'
-
-
 # ── batch fetch ───────────────────────────────────────────────────────────────
 
 def fetch_holdings_history(holdings: list[dict], max_workers: int = 8) -> dict:
@@ -280,7 +244,7 @@ def fetch_holdings_history(holdings: list[dict], max_workers: int = 8) -> dict:
             ticker = div_futs[fut]
             try:
                 div_results[ticker] = fut.result()
-            except Exception as exc:
+            except Exception:
                 div_results[ticker] = {'total_per_share': 0.0, 'count': 0, 'payouts': []}
 
     # Assemble enriched rows (preserve original order)
