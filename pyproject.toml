@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+extend-exclude = ["Downloads", "global_expansion_screener_framework", "api-data-integration", "frontend", ".venv"]
+
+[tool.ruff.lint]
+# Phase 1 gate: real errors only (syntax, undefined names, unused imports/vars) on the refactored surface.
+select = ["E9", "F"]

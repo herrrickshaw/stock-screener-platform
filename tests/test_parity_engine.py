@@ -62,3 +62,11 @@ def test_check_exit_profit_target_and_stop_loss():
     stop = eng.check_exit(sig, 30, 30, 5, 5, 100.0, **args)               # dev 25 -> stop
     assert stop[0] and stop[1].startswith("STOP_LOSS")
     assert eng.check_exit(sig, 15, 15, 5, 5, 100.0, **args) == (False, "")  # dev 10
+
+
+def test_dte_is_calendar_days_floored_for_expiry_day():
+    from datetime import date
+    eng = pe.ParityEngine()
+    assert eng._dte("2026-01-31", today=date(2026, 1, 1)) == 30.0
+    assert eng._dte("2026-01-01", today=date(2026, 1, 1)) == 0.001
+    assert eng._dte("2025-12-01", today=date(2026, 1, 1)) == 0.001

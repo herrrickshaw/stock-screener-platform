@@ -1,0 +1,26 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install pytest ruff pandas numpy
+      - name: Lint (refactored surface)
+        run: ruff check backend/scanners/daily_scanner.py backend/fetchers/tickers.py put_call_parity tests
+      - name: Compile
+        run: python -m compileall -q backend put_call_parity
+      - name: Tests (synthetic frames, no network)
+        run: pytest -q

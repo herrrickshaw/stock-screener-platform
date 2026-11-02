@@ -195,10 +195,10 @@ class ParityEngine:
                 )
         return result
 
-    def _dte(self, expiry: str) -> float:
-        """Days to expiry from today (using calendar days)."""
+    def _dte(self, expiry: str, today: Optional[date] = None) -> float:
+        """Calendar days from ``today`` (default: system date) to ``expiry`` (YYYY-MM-DD), floored at 0.001."""
         exp_date = datetime.strptime(expiry, "%Y-%m-%d").date()
-        today = date.today()
+        today = today or date.today()
         delta = (exp_date - today).days
         return max(float(delta), 0.001)   # avoid div-by-zero on expiry day
 
