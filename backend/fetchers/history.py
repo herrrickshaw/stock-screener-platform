@@ -180,6 +180,142 @@ def fetch_current_price(yf_ticker: str) -> dict:
 
 # ── batch fetch ───────────────────────────────────────────────────────────────
 
+def _normalise_holdings(holdings: list[dict]) -> dict[str, dict]:
+    """Parse string purchase dates and deduplicate by ticker (last seen wins)."""
+    by_ticker: dict[str, dict] = {}
+    for h in holdings:
+        h = dict(h)
+        if isinstance(h.get('purchase_date'), str):
+            h['purchase_date'] = parse_date(h['purchase_date'])
+        by_ticker[h['yf_ticker']] = h
+    return by_ticker
+
+
+def _collect(futs: dict, on_error, timeout: int = 180) -> dict[str, dict]:
+    """Gather {ticker: result} from futures; ``on_error(exc)`` builds the fallback record."""
+    results: dict[str, dict] = {}
+    for fut in as_completed(futs, timeout=timeout):
+        ticker = futs[fut]
+        try:
+            results[ticker] = fut.result()
+        except Exception as exc:
+            results[ticker] = on_error(exc)
+    return results
+
+
+def _fetch_all(by_ticker: dict[str, dict], max_workers: int) -> tuple[dict, dict, dict]:
+    """Run price-on-date, current-price and dividend lookups in parallel."""
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        hist_futs = {
+            pool.submit(fetch_price_on_date, ticker, h['purchase_date']): ticker
+            for ticker, h in by_ticker.items()
+            if h.get('purchase_date')
+        }
+        cur_futs = {pool.submit(fetch_current_price, ticker): ticker for ticker in by_ticker}
+        div_futs = {
+            pool.submit(fetch_dividends_since, ticker, h['purchase_date']): ticker
+            for ticker, h in by_ticker.items()
+            if h.get('purchase_date')
+        }
+        err = lambda exc: {'error': str(exc)[:80]}  # noqa: E731
+        hist = _collect(hist_futs, err)
+        cur = _collect(cur_futs, err)
+        div = _collect(div_futs, lambda exc: {'total_per_share': 0.0, 'count': 0, 'payouts': []})
+    return hist, cur, div
+
+
+def _enrich_holding(h: dict, hr: dict, cr: dict, dr: dict) -> dict:
+    """Compute cost basis, P&L, dividend adjustment and signals for one holding."""
+    purchase_date  = h.get('purchase_date')
+    purchase_price = _f(h.get('purchase_price'))
+    quantity       = _f(h.get('quantity'))
+    price_on_date  = _f(hr.get('close'))
+    current_price  = _f(cr.get('close'))
+
+    # Effective cost: user-supplied purchase_price beats price_on_date
+    effective_buy = purchase_price if purchase_price is not None else price_on_date
+
+    cost_basis    = _round(effective_buy * quantity)   if effective_buy  and quantity else None
+    current_value = _round(current_price * quantity)   if current_price  and quantity else None
+    pnl           = _round(current_value - cost_basis) if cost_basis and current_value else None
+    pnl_pct       = _round((current_price - effective_buy) / effective_buy * 100) \
+                    if current_price and effective_buy else None
+
+    # Dividend adjustment
+    div_per_share    = _f(dr.get('total_per_share', 0.0)) or 0.0
+    div_received     = _round(div_per_share * quantity) if quantity else None
+    # Adjusted cost = purchase price net of dividends received
+    adjusted_cost    = _round(effective_buy - div_per_share) if effective_buy else None
+    # Total return = capital gain + dividends (vs original purchase price)
+    total_return_pnl = _round(pnl + div_received) \
+                       if pnl is not None and div_received is not None else pnl
+    total_return_pct = _round((current_price - effective_buy + div_per_share) / effective_buy * 100) \
+                       if current_price and effective_buy else None
+
+    errors = {k: v for k, v in {'hist': hr.get('error'), 'cur': cr.get('error')}.items() if v}
+
+    return {
+        'yf_ticker':          h['yf_ticker'],
+        'name':               h.get('name', ''),
+        'purchase_date':      purchase_date.isoformat() if isinstance(purchase_date, date) else (purchase_date or ''),
+        'actual_date':        hr.get('actual_date'),
+        'price_on_date':      price_on_date,
+        'purchase_price':     purchase_price,
+        'current_price':      current_price,
+        'quantity':           quantity,
+        'cost_basis':         cost_basis,
+        'current_value':      current_value,
+        'unrealised_pnl':     pnl,
+        'pnl_pct':            pnl_pct,
+        # dividend fields
+        'dividends_per_share':  round(div_per_share, 4) if div_per_share else 0.0,
+        'dividends_received':   div_received,
+        'dividend_count':       dr.get('count', 0),
+        'dividend_payouts':     dr.get('payouts', []),
+        'adjusted_cost':        adjusted_cost,
+        'total_return_pnl':     total_return_pnl,
+        'total_return_pct':     total_return_pct,
+        # signals
+        'rsi':             cr.get('rsi'),
+        'rsi_signal':      cr.get('rsi_signal'),
+        'ema_50':          cr.get('ema_50'),
+        'price_source':    hr.get('source', 'unavailable'),
+        'quote_source':    cr.get('source', 'unavailable'),
+        'errors':          errors if errors else None,
+    }
+
+
+def _summarise(enriched: list[dict]) -> dict:
+    """Portfolio-level aggregates over holdings that have both cost and value."""
+    valid = [r for r in enriched if r['cost_basis'] is not None and r['current_value'] is not None]
+    total_cost    = _round(sum(r['cost_basis']    for r in valid)) if valid else None
+    total_value   = _round(sum(r['current_value'] for r in valid)) if valid else None
+    total_pnl     = _round(total_value - total_cost)               if total_cost and total_value else None
+    total_pnl_pct = _round(total_pnl / total_cost * 100)           if total_cost and total_pnl  else None
+
+    total_divs       = _round(sum(r['dividends_received'] or 0 for r in valid)) if valid else None
+    total_return_pnl = _round(total_pnl + total_divs) \
+                       if total_pnl is not None and total_divs is not None else total_pnl
+    total_return_pct = _round(total_return_pnl / total_cost * 100) \
+                       if total_return_pnl is not None and total_cost else None
+
+    signals = [r['rsi_signal'] for r in enriched if r.get('rsi_signal')]
+    return {
+        'holdings_count':         len(enriched),
+        'priced_count':           len(valid),
+        'total_cost_basis':       total_cost,
+        'total_current_value':    total_value,
+        'total_unrealised_pnl':   total_pnl,
+        'total_pnl_pct':          total_pnl_pct,
+        'total_dividends_received': total_divs,
+        'total_return_pnl':       total_return_pnl,
+        'total_return_pct':       total_return_pct,
+        'rsi_buy':                signals.count('BUY'),
+        'rsi_sell':               signals.count('SELL'),
+        'rsi_hold':               signals.count('HOLD'),
+    }
+
+
 def fetch_holdings_history(holdings: list[dict], max_workers: int = 8) -> dict:
     """
     For each holding, fetch:
@@ -198,151 +334,15 @@ def fetch_holdings_history(holdings: list[dict], max_workers: int = 8) -> dict:
       'summary':  {...portfolio-level aggregates...}
     }
     """
-    # Normalise and deduplicate by ticker (keep last seen)
-    by_ticker: dict[str, dict] = {}
-    for h in holdings:
-        h = dict(h)
-        if isinstance(h.get('purchase_date'), str):
-            h['purchase_date'] = parse_date(h['purchase_date'])
-        by_ticker[h['yf_ticker']] = h
-
-    hist_results: dict[str, dict] = {}
-    cur_results:  dict[str, dict] = {}
-    div_results:  dict[str, dict] = {}
-
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        hist_futs = {
-            pool.submit(fetch_price_on_date, ticker, h['purchase_date']): ticker
-            for ticker, h in by_ticker.items()
-            if h.get('purchase_date')
-        }
-        cur_futs = {
-            pool.submit(fetch_current_price, ticker): ticker
-            for ticker in by_ticker
-        }
-        div_futs = {
-            pool.submit(fetch_dividends_since, ticker, h['purchase_date']): ticker
-            for ticker, h in by_ticker.items()
-            if h.get('purchase_date')
-        }
-
-        for fut in as_completed(hist_futs, timeout=180):
-            ticker = hist_futs[fut]
-            try:
-                hist_results[ticker] = fut.result()
-            except Exception as exc:
-                hist_results[ticker] = {'error': str(exc)[:80]}
-
-        for fut in as_completed(cur_futs, timeout=180):
-            ticker = cur_futs[fut]
-            try:
-                cur_results[ticker] = fut.result()
-            except Exception as exc:
-                cur_results[ticker] = {'error': str(exc)[:80]}
-
-        for fut in as_completed(div_futs, timeout=180):
-            ticker = div_futs[fut]
-            try:
-                div_results[ticker] = fut.result()
-            except Exception:
-                div_results[ticker] = {'total_per_share': 0.0, 'count': 0, 'payouts': []}
-
-    # Assemble enriched rows (preserve original order)
-    enriched: list[dict] = []
-    for h in holdings:
-        ticker = h['yf_ticker']
-        hr     = hist_results.get(ticker, {})
-        cr     = cur_results.get(ticker, {})
-        dr     = div_results.get(ticker, {})
-
-        purchase_date  = h.get('purchase_date')
-        purchase_price = _f(h.get('purchase_price'))
-        quantity       = _f(h.get('quantity'))
-        price_on_date  = _f(hr.get('close'))
-        current_price  = _f(cr.get('close'))
-
-        # Effective cost: user-supplied purchase_price beats price_on_date
-        effective_buy = purchase_price if purchase_price is not None else price_on_date
-
-        cost_basis    = _round(effective_buy * quantity)   if effective_buy  and quantity else None
-        current_value = _round(current_price * quantity)   if current_price  and quantity else None
-        pnl           = _round(current_value - cost_basis) if cost_basis and current_value else None
-        pnl_pct       = _round((current_price - effective_buy) / effective_buy * 100) \
-                        if current_price and effective_buy else None
-
-        # Dividend adjustment
-        div_per_share    = _f(dr.get('total_per_share', 0.0)) or 0.0
-        div_received     = _round(div_per_share * quantity) if quantity else None
-        # Adjusted cost = purchase price net of dividends received
-        adjusted_cost    = _round(effective_buy - div_per_share) if effective_buy else None
-        # Total return = capital gain + dividends (vs original purchase price)
-        total_return_pnl = _round(pnl + div_received) \
-                           if pnl is not None and div_received is not None else pnl
-        total_return_pct = _round((current_price - effective_buy + div_per_share) / effective_buy * 100) \
-                           if current_price and effective_buy else None
-
-        errors = {k: v for k, v in {'hist': hr.get('error'), 'cur': cr.get('error')}.items() if v}
-
-        enriched.append({
-            'yf_ticker':          ticker,
-            'name':               h.get('name', ''),
-            'purchase_date':      purchase_date.isoformat() if isinstance(purchase_date, date) else (purchase_date or ''),
-            'actual_date':        hr.get('actual_date'),
-            'price_on_date':      price_on_date,
-            'purchase_price':     purchase_price,
-            'current_price':      current_price,
-            'quantity':           quantity,
-            'cost_basis':         cost_basis,
-            'current_value':      current_value,
-            'unrealised_pnl':     pnl,
-            'pnl_pct':            pnl_pct,
-            # dividend fields
-            'dividends_per_share':  round(div_per_share, 4) if div_per_share else 0.0,
-            'dividends_received':   div_received,
-            'dividend_count':       dr.get('count', 0),
-            'dividend_payouts':     dr.get('payouts', []),
-            'adjusted_cost':        adjusted_cost,
-            'total_return_pnl':     total_return_pnl,
-            'total_return_pct':     total_return_pct,
-            # signals
-            'rsi':             cr.get('rsi'),
-            'rsi_signal':      cr.get('rsi_signal'),
-            'ema_50':          cr.get('ema_50'),
-            'price_source':    hr.get('source', 'unavailable'),
-            'quote_source':    cr.get('source', 'unavailable'),
-            'errors':          errors if errors else None,
-        })
-
-    # Portfolio summary
-    valid = [r for r in enriched if r['cost_basis'] is not None and r['current_value'] is not None]
-    total_cost    = _round(sum(r['cost_basis']    for r in valid)) if valid else None
-    total_value   = _round(sum(r['current_value'] for r in valid)) if valid else None
-    total_pnl     = _round(total_value - total_cost)               if total_cost and total_value else None
-    total_pnl_pct = _round(total_pnl / total_cost * 100)           if total_cost and total_pnl  else None
-
-    total_divs       = _round(sum(r['dividends_received'] or 0 for r in valid)) if valid else None
-    total_return_pnl = _round(total_pnl + total_divs) \
-                       if total_pnl is not None and total_divs is not None else total_pnl
-    total_return_pct = _round(total_return_pnl / total_cost * 100) \
-                       if total_return_pnl is not None and total_cost else None
-
-    signals = [r['rsi_signal'] for r in enriched if r.get('rsi_signal')]
-    summary = {
-        'holdings_count':         len(enriched),
-        'priced_count':           len(valid),
-        'total_cost_basis':       total_cost,
-        'total_current_value':    total_value,
-        'total_unrealised_pnl':   total_pnl,
-        'total_pnl_pct':          total_pnl_pct,
-        'total_dividends_received': total_divs,
-        'total_return_pnl':       total_return_pnl,
-        'total_return_pct':       total_return_pct,
-        'rsi_buy':                signals.count('BUY'),
-        'rsi_sell':               signals.count('SELL'),
-        'rsi_hold':               signals.count('HOLD'),
-    }
-
-    return {'holdings': enriched, 'summary': summary}
+    by_ticker = _normalise_holdings(holdings)
+    hist_results, cur_results, div_results = _fetch_all(by_ticker, max_workers)
+    # Enriched rows keep the caller's original order
+    enriched = [
+        _enrich_holding(h, hist_results.get(h['yf_ticker'], {}),
+                        cur_results.get(h['yf_ticker'], {}), div_results.get(h['yf_ticker'], {}))
+        for h in holdings
+    ]
+    return {'holdings': enriched, 'summary': _summarise(enriched)}
 
 
 def _f(v) -> Optional[float]:
