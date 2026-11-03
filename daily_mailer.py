@@ -51,6 +51,218 @@ SMTP_PORT = 587
 # REPORT GENERATION
 # ─────────────────────────────────────────────────────────────────────────────
 
+_REPORT_CSS = """
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .summary-box .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .summary-box .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        .section-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .stock-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            background: #f9f9f9;
+            transition: all 0.3s ease;
+        }
+        .stock-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        .stock-symbol {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        .stock-details {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .stock-details div {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .signal {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .signal.buy {
+            background-color: #4caf50;
+            color: white;
+        }
+        .signal.watch {
+            background-color: #ff9800;
+            color: white;
+        }
+        .signal.hold {
+            background-color: #2196f3;
+            color: white;
+        }
+        .tier {
+            margin-bottom: 25px;
+        }
+        .tier-header {
+            background-color: #f0f0f0;
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .tier-label {
+            font-size: 14px;
+            color: #667eea;
+        }
+        .tier-allocation {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .filters {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+        .filters h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .filters ul {
+            margin: 10px 0;
+            padding-left: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        .filters li {
+            margin-bottom: 6px;
+        }
+        .footer {
+            background-color: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .markets {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .market-badge {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .performance {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .perf-metric {
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .perf-metric .label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .perf-metric .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    """
+
+
 class DailyMailer:
     def __init__(self):
         self.report_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -203,216 +415,7 @@ class DailyMailer:
 <html>
 <head>
     <meta charset="UTF-8">
-    <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-        }}
-        .container {{
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }}
-        .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }}
-        .header h1 {{
-            margin: 0;
-            font-size: 28px;
-            font-weight: 300;
-            letter-spacing: 1px;
-        }}
-        .header p {{
-            margin: 10px 0 0 0;
-            font-size: 14px;
-            opacity: 0.9;
-        }}
-        .content {{
-            padding: 30px;
-        }}
-        .summary-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }}
-        .summary-box {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }}
-        .summary-box .label {{
-            font-size: 12px;
-            text-transform: uppercase;
-            opacity: 0.9;
-            margin-bottom: 10px;
-        }}
-        .summary-box .value {{
-            font-size: 24px;
-            font-weight: bold;
-        }}
-        .section {{
-            margin-bottom: 40px;
-        }}
-        .section-title {{
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #667eea;
-        }}
-        .section-description {{
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }}
-        .stock-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
-        }}
-        .stock-card {{
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 15px;
-            background: #f9f9f9;
-            transition: all 0.3s ease;
-        }}
-        .stock-card:hover {{
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border-color: #667eea;
-        }}
-        .stock-symbol {{
-            font-size: 18px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 8px;
-        }}
-        .stock-details {{
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 8px;
-        }}
-        .stock-details div {{
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-        }}
-        .signal {{
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }}
-        .signal.buy {{
-            background-color: #4caf50;
-            color: white;
-        }}
-        .signal.watch {{
-            background-color: #ff9800;
-            color: white;
-        }}
-        .signal.hold {{
-            background-color: #2196f3;
-            color: white;
-        }}
-        .tier {{
-            margin-bottom: 25px;
-        }}
-        .tier-header {{
-            background-color: #f0f0f0;
-            padding: 12px 15px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }}
-        .tier-label {{
-            font-size: 14px;
-            color: #667eea;
-        }}
-        .tier-allocation {{
-            font-size: 12px;
-            color: #999;
-            margin-top: 4px;
-        }}
-        .filters {{
-            background-color: #f5f5f5;
-            padding: 20px;
-            border-radius: 6px;
-            margin-bottom: 30px;
-        }}
-        .filters h4 {{
-            margin-top: 0;
-            color: #333;
-        }}
-        .filters ul {{
-            margin: 10px 0;
-            padding-left: 20px;
-            color: #666;
-            font-size: 14px;
-        }}
-        .filters li {{
-            margin-bottom: 6px;
-        }}
-        .footer {{
-            background-color: #f5f5f5;
-            padding: 20px;
-            text-align: center;
-            color: #999;
-            font-size: 12px;
-            border-top: 1px solid #e0e0e0;
-        }}
-        .markets {{
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 15px;
-        }}
-        .market-badge {{
-            background-color: #e3f2fd;
-            color: #1976d2;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }}
-        .performance {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }}
-        .perf-metric {{
-            background: white;
-            border: 1px solid #e0e0e0;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-        }}
-        .perf-metric .label {{
-            font-size: 12px;
-            color: #999;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }}
-        .perf-metric .value {{
-            font-size: 18px;
-            font-weight: bold;
-            color: #667eea;
-        }}
-    </style>
+    <style>{_REPORT_CSS}</style>
 </head>
 <body>
     <div class="container">
@@ -424,26 +427,7 @@ class DailyMailer:
         <div class="content">
 
             <!-- GLOBAL SUMMARY -->
-            <div class="section">
-                <div class="section-title">Global Market Overview</div>
-                <div class="summary-grid">
-                    <div class="summary-box">
-                        <div class="label">Markets Covered</div>
-                        <div class="value">{len(summary["markets_covered"])}</div>
-                    </div>
-                    <div class="summary-box">
-                        <div class="label">Win Rate</div>
-                        <div class="value">{summary["performance_expectations"]["win_rate"]}</div>
-                    </div>
-                    <div class="summary-box">
-                        <div class="label">Sharpe Ratio</div>
-                        <div class="value">{summary["performance_expectations"]["sharpe_ratio"]}</div>
-                    </div>
-                    <div class="summary-box">
-                        <div class="label">Target CAGR</div>
-                        <div class="value">{summary["performance_expectations"]["cagr"]}</div>
-                    </div>
-                </div>
+            {self._render_overview(summary)}
 
                 <div class="markets">
                     {''.join(f'<div class="market-badge">{m}</div>' for m in summary["markets_covered"])}
@@ -451,33 +435,16 @@ class DailyMailer:
             </div>
 
             <!-- FILTERS APPLIED -->
-            <div class="filters">
-                <h4>🔍 Multi-Layer Filter Framework</h4>
-                <ul>
-                    {''.join(f'<li>{f}</li>' for f in summary["filters_applied"])}
-                </ul>
-            </div>
+            {self._render_filters(summary)}
 
             <!-- DARVAS SIGNALS -->
-            <div class="section">
-                <div class="section-title">{darvas["title"]}</div>
-                <div class="section-description">{darvas["description"]}</div>
-                {self._render_stock_cards(darvas["stocks"])}
-                <p style="color: #999; font-size: 13px; margin-top: 15px;">{darvas["summary"]}</p>
-            </div>
+            {self._render_picks_section(darvas)}
 
             <!-- PIOTROSKI PICKS -->
-            <div class="section">
-                <div class="section-title">{piotroski["title"]}</div>
-                <div class="section-description">{piotroski["description"]}</div>
-                {self._render_stock_cards(piotroski["stocks"])}
-                <p style="color: #999; font-size: 13px; margin-top: 15px;">{piotroski["summary"]}</p>
-            </div>
+            {self._render_picks_section(piotroski)}
 
             <!-- GERMAN MARKET ANALYSIS -->
-            <div class="section">
-                <div class="section-title">{german["title"]}</div>
-                <div class="section-description">{german["description"]}</div>
+            {self._render_german_section(german)}
 
                 {self._render_german_tiers(german["tiers"])}
 
@@ -501,15 +468,66 @@ class DailyMailer:
 
         </div>
 
-        <div class="footer">
-            <p>This report is generated automatically. For questions or feedback, contact: umashankartd1991@gmail.com</p>
-            <p>Next update: {(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d at 08:30 AM')}</p>
-        </div>
+        {self._render_footer()}
     </div>
 </body>
 </html>
 """
         return html
+
+    def _render_overview(self, summary):
+        """Global market overview: summary tiles and covered-market badges"""
+        return f"""<div class="section">
+                <div class="section-title">Global Market Overview</div>
+                <div class="summary-grid">
+                    <div class="summary-box">
+                        <div class="label">Markets Covered</div>
+                        <div class="value">{len(summary["markets_covered"])}</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="label">Win Rate</div>
+                        <div class="value">{summary["performance_expectations"]["win_rate"]}</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="label">Sharpe Ratio</div>
+                        <div class="value">{summary["performance_expectations"]["sharpe_ratio"]}</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="label">Target CAGR</div>
+                        <div class="value">{summary["performance_expectations"]["cagr"]}</div>
+                    </div>
+                </div>"""
+
+    def _render_filters(self, summary):
+        """Multi-layer filter framework box"""
+        return f"""<div class="filters">
+                <h4>🔍 Multi-Layer Filter Framework</h4>
+                <ul>
+                    {''.join(f'<li>{f}</li>' for f in summary["filters_applied"])}
+                </ul>
+            </div>"""
+
+    def _render_picks_section(self, data):
+        """Titled section of stock cards (Darvas / Piotroski)"""
+        return f"""<div class="section">
+                <div class="section-title">{data["title"]}</div>
+                <div class="section-description">{data["description"]}</div>
+                {self._render_stock_cards(data["stocks"])}
+                <p style="color: #999; font-size: 13px; margin-top: 15px;">{data["summary"]}</p>
+            </div>"""
+
+    def _render_german_section(self, german):
+        """German momentum + CCC tiers with the expected-performance strip"""
+        return f"""<div class="section">
+                <div class="section-title">{german["title"]}</div>
+                <div class="section-description">{german["description"]}</div>"""
+
+    def _render_footer(self):
+        """Footer with contact line and next-update date"""
+        return f"""<div class="footer">
+            <p>This report is generated automatically. For questions or feedback, contact: umashankartd1991@gmail.com</p>
+            <p>Next update: {(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d at 08:30 AM')}</p>
+        </div>"""
 
     def _render_stock_cards(self, stocks):
         """Render stock cards HTML"""
