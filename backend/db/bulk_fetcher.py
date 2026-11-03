@@ -132,6 +132,69 @@ def _fetch_info_one(ticker: str, suffix: str, is_inr: bool, market: str = 'us') 
 
 # ── Main fetch functions ──────────────────────────────────────────────────────
 
+def _set_progress(market: str, value: dict) -> None:
+    with _lock:
+        _progress[market] = value
+
+
+def _update_progress(market: str, **fields) -> None:
+    with _lock:
+        _progress[market].update(fields)
+
+
+def _run_phase1(market: str, tickers: list[str], suffix: str, is_inr: bool,
+                batch_size: int, inter_batch_delay: float, started: float) -> tuple[dict, int, int]:
+    """Phase 1: OHLCV batches. Returns (rows by ticker, done count, error count)."""
+    total = len(tickers)
+    done = errors = 0
+    phase1_rows: dict[str, dict] = {}  # ticker -> partial row
+
+    for i in range(0, total, batch_size):
+        if _cancel.is_set():
+            break
+        batch = tickers[i:i + batch_size]
+        batch_rows = _fetch_ohlcv_batch(batch, suffix, is_inr, market)
+
+        for row in batch_rows:
+            phase1_rows[row['ticker']] = row
+
+        batch_done = len(batch_rows)
+        done   += batch_done
+        errors += len(batch) - batch_done
+
+        elapsed = time.time() - started
+        rate    = round((done + errors) / elapsed * 60, 1) if elapsed > 0 else 0
+        _update_progress(market, done=done + errors, errors=errors,
+                         elapsed_s=round(elapsed, 1), rate_per_min=rate)
+
+        if inter_batch_delay > 0:
+            time.sleep(inter_batch_delay)
+    return phase1_rows, done, errors
+
+
+def _run_phase2(market: str, phase1_rows: dict[str, dict], suffix: str, is_inr: bool,
+                max_workers: int, started: float) -> None:
+    """Phase 2: throttled per-ticker fundamentals merged into ``phase1_rows``."""
+    _update_progress(market, phase=2)
+    log.info('bulk_fetcher: [%s] phase 2 (fundamentals) — %d tickers', market, len(phase1_rows))
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futs = {
+            pool.submit(_fetch_info_one, t, suffix, is_inr, market): t
+            for t in list(phase1_rows.keys())
+        }
+        for fut in as_completed(futs, timeout=600):
+            t = futs[fut]
+            try:
+                extras = fut.result()
+                if extras:
+                    phase1_rows[t].update(extras)
+            except Exception as exc:
+                log.debug('bulk_fetcher: [%s] fundamentals for %s failed: %s', market, t, exc)
+
+    _update_progress(market, elapsed_s=round(time.time() - started, 1))
+
+
 def fetch_market_quotes(
     market: str,
     batch_size: int = 100,
@@ -151,81 +214,28 @@ def fetch_market_quotes(
     if not tickers:
         result = {'market': market, 'total': 0, 'done': 0, 'errors': 0,
                   'written': 0, 'status': 'no_instruments', 'elapsed_s': 0}
-        with _lock:
-            _progress[market] = result
+        _set_progress(market, result)
         return result
 
     total   = len(tickers)
-    done    = errors = written = 0
+    written = 0
     started = time.time()
 
-    with _lock:
-        _progress[market] = {
-            'status': 'running', 'total': total,
-            'done': 0, 'errors': 0, 'written': 0,
-            'elapsed_s': 0, 'rate_per_min': 0, 'phase': 1,
-        }
+    _set_progress(market, {
+        'status': 'running', 'total': total,
+        'done': 0, 'errors': 0, 'written': 0,
+        'elapsed_s': 0, 'rate_per_min': 0, 'phase': 1,
+    })
 
     log.info('bulk_fetcher: [%s] phase 1 (OHLCV) — %d tickers, batch=%d', market, total, batch_size)
+    phase1_rows, done, errors = _run_phase1(market, tickers, suffix, is_inr,
+                                            batch_size, inter_batch_delay, started)
 
-    # ── Phase 1: OHLCV batches ────────────────────────────────────────────────
-    phase1_rows: dict[str, dict] = {}  # ticker → partial row
-
-    for i in range(0, total, batch_size):
-        if _cancel.is_set():
-            break
-        batch = tickers[i:i + batch_size]
-        batch_rows = _fetch_ohlcv_batch(batch, suffix, is_inr, market)
-
-        for row in batch_rows:
-            phase1_rows[row['ticker']] = row
-
-        batch_done = len(batch_rows)
-        batch_err  = len(batch) - batch_done
-        done   += batch_done
-        errors += batch_err
-
-        elapsed = time.time() - started
-        rate    = round((done + errors) / elapsed * 60, 1) if elapsed > 0 else 0
-        with _lock:
-            _progress[market].update({
-                'done': done + errors, 'errors': errors,
-                'elapsed_s': round(elapsed, 1), 'rate_per_min': rate,
-            })
-
-        if inter_batch_delay > 0:
-            time.sleep(inter_batch_delay)
-
-    # ── Phase 2: fundamentals (throttled) ─────────────────────────────────────
     if with_fundamentals and phase1_rows and not _cancel.is_set():
-        with _lock:
-            _progress[market]['phase'] = 2
+        _run_phase2(market, phase1_rows, suffix, is_inr, max_workers, started)
 
-        log.info('bulk_fetcher: [%s] phase 2 (fundamentals) — %d tickers', market, len(phase1_rows))
-
-        fund_tickers = list(phase1_rows.keys())
-        with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            futs = {
-                pool.submit(_fetch_info_one, t, suffix, is_inr, market): t
-                for t in fund_tickers
-            }
-            for fut in as_completed(futs, timeout=600):
-                t = futs[fut]
-                try:
-                    extras = fut.result()
-                    if extras:
-                        phase1_rows[t].update(extras)
-                except Exception:
-                    pass
-
-        elapsed = time.time() - started
-        with _lock:
-            _progress[market].update({'elapsed_s': round(elapsed, 1)})
-
-    # ── Write to Cassandra ────────────────────────────────────────────────────
     if phase1_rows:
-        df     = pd.DataFrame(list(phase1_rows.values()))
-        written = upsert_quotes(market, df)
+        written = upsert_quotes(market, pd.DataFrame(list(phase1_rows.values())))
 
     elapsed = time.time() - started
     result = {
@@ -234,8 +244,7 @@ def fetch_market_quotes(
         'status': 'cancelled' if _cancel.is_set() else 'done',
         'rate_per_min': round(total / elapsed * 60, 1) if elapsed > 0 else 0,
     }
-    with _lock:
-        _progress[market] = result
+    _set_progress(market, result)
 
     log.info('bulk_fetcher: [%s] %s — %d written in %.0fs',
              market, result['status'], written, elapsed)

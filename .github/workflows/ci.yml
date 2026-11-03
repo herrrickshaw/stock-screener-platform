@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install test dependencies
-        run: pip install pytest ruff pandas numpy requests xlrd
+        run: pip install pytest ruff pandas numpy requests xlrd fastapi
       - name: Lint (refactored surface)
         run: ruff check backend/scanners/daily_scanner.py backend/fetchers/tickers.py put_call_parity tests
       - name: Compile

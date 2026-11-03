@@ -1,0 +1,94 @@
+{
+ "results": {
+  "india": {
+   "market": "india",
+   "total": 7,
+   "done": 6,
+   "errors": 1,
+   "written": 6,
+   "status": "done"
+  },
+  "us": {
+   "market": "us",
+   "total": 7,
+   "done": 6,
+   "errors": 1,
+   "written": 6,
+   "status": "done"
+  },
+  "empty": {
+   "market": "empty",
+   "total": 0,
+   "done": 0,
+   "errors": 0,
+   "written": 0,
+   "status": "no_instruments"
+  }
+ },
+ "written": [
+  [
+   "india",
+   [
+    {
+     "ticker": "T0",
+     "cmp": 1.0,
+     "pe": 5.0
+    },
+    {
+     "ticker": "T1",
+     "cmp": 1.0,
+     "pe": NaN
+    },
+    {
+     "ticker": "T2",
+     "cmp": 1.0,
+     "pe": 5.0
+    },
+    {
+     "ticker": "T4",
+     "cmp": 1.0,
+     "pe": 5.0
+    },
+    {
+     "ticker": "T5",
+     "cmp": 1.0,
+     "pe": 5.0
+    },
+    {
+     "ticker": "T6",
+     "cmp": 1.0,
+     "pe": 5.0
+    }
+   ]
+  ],
+  [
+   "us",
+   [
+    {
+     "ticker": "T0",
+     "cmp": 1.0
+    },
+    {
+     "ticker": "T1",
+     "cmp": 1.0
+    },
+    {
+     "ticker": "T2",
+     "cmp": 1.0
+    },
+    {
+     "ticker": "T4",
+     "cmp": 1.0
+    },
+    {
+     "ticker": "T5",
+     "cmp": 1.0
+    },
+    {
+     "ticker": "T6",
+     "cmp": 1.0
+    }
+   ]
+  ]
+ ]
+}
