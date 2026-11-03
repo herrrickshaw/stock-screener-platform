@@ -465,10 +465,16 @@ def _yf_financials(ticker):
     Handles API differences between old (ticker.financials / ticker.cashflow)
     and new (ticker.income_stmt / ticker.cash_flow) yfinance versions.
     """
-    inc = getattr(ticker, "income_stmt",  None) or getattr(ticker, "financials", None)
-    bal = getattr(ticker, "balance_sheet", None)
-    cf  = getattr(ticker, "cash_flow",    None) or getattr(ticker, "cashflow",   None)
-    return inc, bal, cf
+    def _first_df(*attrs):
+        # Never use `or` between DataFrames: a non-empty one raises ValueError on truth-testing.
+        for attr in attrs:
+            df = getattr(ticker, attr, None)
+            if df is not None and isinstance(df, pd.DataFrame) and not df.empty:
+                return df
+        return None
+
+    return (_first_df("income_stmt", "financials"), getattr(ticker, "balance_sheet", None),
+            _first_df("cash_flow", "cashflow"))
 
 
 def _row(df, *row_names, col: int = 0):

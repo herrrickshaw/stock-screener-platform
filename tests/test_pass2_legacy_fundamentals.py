@@ -73,3 +73,11 @@ def test_india_scorers(india, kind, monkeypatch):
 def test_us_scorers(us, kind):
     fn = getattr(us, f"compute_{kind}" + ("_score" if kind == "piotroski" else ""))
     check(f"legacy_us_{kind}", {k: fn(t, "SYM") for k, t in _cases().items()})
+
+
+def test_india_yf_financials_accepts_dataframes(india):
+    """Bug fix: `df or df` raised ValueError for real yfinance DataFrames, so every scorer returned an error."""
+    t = _ticker(1)
+    t.income_stmt, t.cash_flow = t.financials, t.cashflow
+    inc, bal, cf = india._yf_financials(t)
+    assert not inc.empty and not bal.empty and not cf.empty
