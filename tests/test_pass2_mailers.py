@@ -5,7 +5,6 @@ import importlib
 import sys
 from datetime import datetime
 
-import pytest
 from golden_util import check
 
 ROOT_MODULES = ["daily_mailer", "daily_mailer_enhanced"]

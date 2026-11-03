@@ -440,7 +440,7 @@ def screen_ipo(symbol: str, ohlc_df: pd.DataFrame, meta: dict) -> dict:
             bal    = _first_df(ticker, "balance_sheet")
             info   = {}
             try: info = ticker.info or {}
-            except: pass
+            except Exception: pass
             mcap   = info.get("marketCap", 0) or 0
 
             if inc is not None:

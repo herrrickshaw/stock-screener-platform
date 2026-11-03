@@ -54,7 +54,7 @@ class ProductionRunner:
                     symbols = pickle.load(f)
                 print(f"✅ Loaded {len(symbols):,} symbols from cache")
                 return symbols[:NSE_STOCK_COUNT]  # Limit to configured count
-        except:
+        except (OSError, EOFError, pickle.UnpicklingError, AttributeError, ImportError):
             pass
 
         # Fallback: sample symbols for demonstration
@@ -91,7 +91,7 @@ class ProductionRunner:
                 # Groww API call would go here
                 # For now using yfinance as fallback
                 pass
-            except:
+            except Exception:
                 pass
 
             # Fallback to yfinance

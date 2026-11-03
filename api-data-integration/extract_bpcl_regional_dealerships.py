@@ -183,7 +183,7 @@ class BPCLRegionalExtractor:
             span = cell.find('span')
             text = span.get_text(strip=True) if span else cell.get_text(strip=True)
             return ' '.join(text.split()) if text else ''
-        except:
+        except (AttributeError, TypeError):
             return ''
 
     def deduplicate_dealership(self, dealership: dict) -> bool:

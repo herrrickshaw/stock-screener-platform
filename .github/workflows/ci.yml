@@ -19,7 +19,7 @@ jobs:
       - name: Install test dependencies
         run: pip install pytest ruff pandas numpy requests xlrd fastapi
       - name: Lint (refactored surface)
-        run: ruff check backend/scanners/daily_scanner.py backend/fetchers/tickers.py put_call_parity tests
+        run: ruff check backend/scanners backend/fetchers/history.py backend/fetchers/tickers.py backend/fetchers/providers/base.py backend/db/quote_updater.py backend/db/bulk_fetcher.py backend/routers/cassandra_router.py Downloads/code/python_files/darvas_box.py Downloads/code/python_files/piotroski_core.py Downloads/code/python_files/coffee_can_core.py put_call_parity tests
       - name: Compile
         run: python -m compileall -q backend put_call_parity
       - name: Tests (synthetic frames, no network)

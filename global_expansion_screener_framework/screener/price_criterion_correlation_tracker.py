@@ -342,7 +342,7 @@ if __name__ == "__main__":
     print("📊 Loading screening results...")
     try:
         results = pd.read_csv('/Users/umashankar/Downloads/code/python_files/expansion_screening_results_11d.csv')
-    except:
+    except (OSError, ValueError, pd.errors.EmptyDataError, pd.errors.ParserError):
         print("Results file not found. Using demo data...")
         # Create demo data if file doesn't exist
         np.random.seed(42)
