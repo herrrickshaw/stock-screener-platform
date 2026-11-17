@@ -1,0 +1,3 @@
+# False positive: base64 Figma clipboard metadata ((figmeta) comment) in a saved
+# third-party page. Its fileKey is a Figma document ID, not a credential.
+Downloads/code/web/chapterdetail.html:generic-api-key:121
