@@ -20,7 +20,7 @@ A **complete, automated stock screening system** that runs every morning at 08:0
 - ✅ Detects **multi-screen confirms** (80%+ agreement = strongest signals)
 - ✅ Validates **weekly win rates** with quarterly recalibration
 - ✅ Produces **professional 8-section email** with comparison analytics
-- ✅ Expected **22.4% annual return** (blended strategy)
+- ~~Expected **22.4% annual return** (blended strategy)~~ — retracted, see banner
 
 ---
 
@@ -28,12 +28,12 @@ A **complete, automated stock screening system** that runs every morning at 08:0
 
 | Screen | Market | Win Rate | Expected Return | Status |
 |--------|--------|----------|-----------------|--------|
-| **India Optimized** | India | 62.5% ⭐ | +4.2%/month | **BEST** |
+| **India Optimized** | India | ~~62.5%~~ | ~~+4.2%/month~~ | retracted — see banner |
 | **CCC Legacy** | All | 60.0% | +3.9%/month | STRONG |
 | **USA Optimized** | USA | 58.3% | +3.1%/month | STRONG |
 | **Piotroski** | All | 54.5% | +3.4%/month | SOLID |
 | **Darvas** | All | 50.0% | +2.8%/month | BASELINE |
-| **Blended (all)** | Global | 22.4% | Annually | **BEST-IN-CLASS** |
+| **Blended (all)** | Global | — | ~~22.4% annually~~ | retracted — see banner |
 
 ---
 
