@@ -194,8 +194,8 @@ print("-" * 80)
 
 print("Testing Screener.in API connectivity:\n")
 
-screener_email = 'umashankartd1991@gmail.com'
-screener_password = 'REDACTED_PASSWORD'
+screener_email = os.environ.get("SCREENER_EMAIL", "")
+screener_password = os.environ.get("SCREENER_PASSWORD", "")
 
 try:
     session = requests.Session()

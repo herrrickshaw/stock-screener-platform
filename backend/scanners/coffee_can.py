@@ -19,7 +19,7 @@ Moat score 0-5 (bonus signals):
 Signal: BUY if all hard filters pass; WATCH if >= 70% pass; AVOID otherwise.
 """
 import pandas as pd
-from column_map import completeness, sanitize_result
+from column_map import completeness, first_present, sanitize_result
 
 REQUIRED_FIELDS = [
     'sales_growth_10y', 'sales_growth_5y', 'sales_growth_3y',
@@ -37,19 +37,11 @@ def _score(row: pd.Series) -> dict:
     c: dict[str, bool | None] = {}
 
     # H1: Revenue CAGR > 10%
-    rev_g = (
-        row.get('sales_growth_10y')
-        or row.get('sales_growth_5y')
-        or row.get('sales_growth_3y')
-    )
+    rev_g = first_present(row, 'sales_growth_10y', 'sales_growth_5y', 'sales_growth_3y')
     c['revenue_cagr_gt_10'] = (rev_g > 10) if pd.notna(rev_g) else None
 
     # H2: Profit CAGR > 10%
-    pro_g = (
-        row.get('profit_growth_10y')
-        or row.get('profit_growth_5y')
-        or row.get('profit_growth_3y')
-    )
+    pro_g = first_present(row, 'profit_growth_10y', 'profit_growth_5y', 'profit_growth_3y')
     c['profit_cagr_gt_10'] = (pro_g > 10) if pd.notna(pro_g) else None
 
     # H3: ROCE > 15%
@@ -75,7 +67,7 @@ def _score(row: pd.Series) -> dict:
 
     # Moat score
     moat = 0
-    opm = row.get('opm') or row.get('net_profit_margin')
+    opm = first_present(row, 'opm', 'net_profit_margin')
     roe = row.get('roe')
     if pd.notna(opm):
         moat += 2 if opm > 40 else (1 if opm > 25 else 0)

@@ -112,16 +112,19 @@ def fetch_price_on_date(yf_ticker: str, target: date) -> dict:
         if hist.empty:
             return {'error': 'no data for this ticker/date range'}
 
-        # Normalise timezone-aware index
+        # Normalise timezone-aware index. Daily bars are stamped at exchange-local
+        # midnight: drop the tz but keep the wall-clock date. Converting to UTC first
+        # (tz_convert(None)) moves US bars to 04:00/05:00 of the same day (so the target
+        # session fell after the cutoff) and Asian bars to the previous calendar day.
         idx = hist.index
         if hasattr(idx, 'tz') and idx.tz is not None:
-            idx = idx.tz_convert(None).tz_localize(None)
+            idx = idx.tz_localize(None)
         hist.index = idx
 
         cutoff = datetime.combine(target, datetime.min.time())
         before = hist[hist.index <= cutoff]
         if before.empty:
-            before = hist          # all rows after target; use earliest available
+            before = hist.iloc[:1]  # all rows after target; use earliest available
 
         row        = before.iloc[-1]
         close      = float(row['Close'])
@@ -234,13 +237,14 @@ def fetch_holdings_history(holdings: list[dict], max_workers: int = 8) -> dict:
       'summary':  {...portfolio-level aggregates...}
     }
     """
-    # Normalise and deduplicate by ticker (keep last seen)
-    by_ticker: dict[str, dict] = {}
+    # Normalise dates. Several lots of one ticker bought on different dates are common,
+    # so date-dependent lookups are keyed by (ticker, purchase_date), not ticker alone.
+    holdings = [dict(h) for h in holdings]
     for h in holdings:
-        h = dict(h)
         if isinstance(h.get('purchase_date'), str):
             h['purchase_date'] = parse_date(h['purchase_date'])
-        by_ticker[h['yf_ticker']] = h
+    lots = {(h['yf_ticker'], h.get('purchase_date')) for h in holdings}
+    tickers = {t for t, _ in lots}
 
     hist_results: dict[str, dict] = {}
     cur_results:  dict[str, dict] = {}
@@ -248,18 +252,18 @@ def fetch_holdings_history(holdings: list[dict], max_workers: int = 8) -> dict:
 
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         hist_futs = {
-            pool.submit(fetch_price_on_date, ticker, h['purchase_date']): ticker
-            for ticker, h in by_ticker.items()
-            if h.get('purchase_date')
+            pool.submit(fetch_price_on_date, ticker, pdate): (ticker, pdate)
+            for ticker, pdate in lots
+            if pdate
         }
         cur_futs = {
             pool.submit(fetch_current_price, ticker): ticker
-            for ticker in by_ticker
+            for ticker in tickers
         }
         div_futs = {
-            pool.submit(fetch_dividends_since, ticker, h['purchase_date']): ticker
-            for ticker, h in by_ticker.items()
-            if h.get('purchase_date')
+            pool.submit(fetch_dividends_since, ticker, pdate): (ticker, pdate)
+            for ticker, pdate in lots
+            if pdate
         }
 
         for fut in as_completed(hist_futs, timeout=180):
@@ -287,9 +291,10 @@ def fetch_holdings_history(holdings: list[dict], max_workers: int = 8) -> dict:
     enriched: list[dict] = []
     for h in holdings:
         ticker = h['yf_ticker']
-        hr     = hist_results.get(ticker, {})
+        key    = (ticker, h.get('purchase_date'))
+        hr     = hist_results.get(key, {})
         cr     = cur_results.get(ticker, {})
-        dr     = div_results.get(ticker, {})
+        dr     = div_results.get(key, {})
 
         purchase_date  = h.get('purchase_date')
         purchase_price = _f(h.get('purchase_price'))
@@ -354,7 +359,7 @@ def fetch_holdings_history(holdings: list[dict], max_workers: int = 8) -> dict:
     total_cost    = _round(sum(r['cost_basis']    for r in valid)) if valid else None
     total_value   = _round(sum(r['current_value'] for r in valid)) if valid else None
     total_pnl     = _round(total_value - total_cost)               if total_cost and total_value else None
-    total_pnl_pct = _round(total_pnl / total_cost * 100)           if total_cost and total_pnl  else None
+    total_pnl_pct = _round(total_pnl / total_cost * 100)           if total_cost and total_pnl is not None else None
 
     total_divs       = _round(sum(r['dividends_received'] or 0 for r in valid)) if valid else None
     total_return_pnl = _round(total_pnl + total_divs) \

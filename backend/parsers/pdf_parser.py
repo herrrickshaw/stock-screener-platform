@@ -35,8 +35,13 @@ def _resolve(raw_ticker: str, raw_name: str, raw_isin: str,
     matched_via = ''
 
     if raw_ticker:
-        sym = re.sub(r'[ \t/-].*$', '', raw_ticker.upper().strip())
-        info = lookup(sym, market)
+        # Try the symbol as written first: real NSE symbols contain '-' (BAJAJ-AUTO,
+        # MCDOWELL-N). Only then strip series/exchange tails like -EQ, /NSE, spaces.
+        full = raw_ticker.upper().strip()
+        info = lookup(full, market)
+        if not info:
+            sym = re.sub(r'[ \t/-].*$', '', full)
+            info = lookup(sym, market)
         if info:
             matched_via = 'symbol'
 

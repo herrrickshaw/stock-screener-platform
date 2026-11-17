@@ -147,8 +147,11 @@ def estimate_transaction_cost(cfg: InstrumentConfig, lots: int,
     # --- SEBI charges ---
     sebi = (call_mid + put_mid) * lot * cm.sebi_rate * 2 + futures_notional * cm.sebi_rate * 2
 
-    total_per_lot = brokerage + option_stt + futures_stt + exchange_charges + gst + sebi
-    return total_per_lot * lots
+    # Brokerage is flat per ORDER (one order per leg carries all lots), so it and its GST
+    # are charged once; the turnover-based charges above are per lot and scale with lots.
+    brokerage_gst = brokerage * cm.gst_rate
+    variable_per_lot = option_stt + futures_stt + exchange_charges + (gst - brokerage_gst) + sebi
+    return brokerage + brokerage_gst + variable_per_lot * lots
 
 
 # ---------------------------------------------------------------------------

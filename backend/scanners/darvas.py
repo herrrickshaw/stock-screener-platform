@@ -19,7 +19,7 @@ Buffett overlay (quality filter):
 Score 0-10. Signal: BUY >= 7, WATCH >= 4, AVOID < 4.
 """
 import pandas as pd
-from column_map import completeness, sanitize_result
+from column_map import completeness, first_present, sanitize_result
 from damodaran import get_sector_pe
 
 REQUIRED_FIELDS = [
@@ -94,7 +94,7 @@ def _score(row: pd.Series) -> dict:
         score += 1
 
     # C8: EPS / profit growth > 10% CAGR
-    eg = row.get('eps_growth_5y') or row.get('profit_growth_5y') or row.get('profit_growth_3y')
+    eg = first_present(row, 'eps_growth_5y', 'profit_growth_5y', 'profit_growth_3y')
     c['eps_growth_gt_10'] = (eg > 10) if pd.notna(eg) else None
     if c['eps_growth_gt_10']:
         score += 1
