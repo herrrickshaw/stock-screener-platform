@@ -106,6 +106,74 @@ def _s(row: pd.Series, key: str) -> Optional[str]:
     return s if s else None
 
 
+def _fv(v) -> Optional[float]:
+    try:
+        f = float(v)
+        return None if math.isnan(f) else f
+    except (TypeError, ValueError):
+        return None
+
+
+def _iv(v) -> Optional[int]:
+    f = _fv(v)
+    return int(f) if f is not None else None
+
+
+def _sv(v) -> Optional[str]:
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return None
+    s = str(v).strip()
+    return s if s else None
+
+
+# Columns read from the live frame (missing ones are added as None), then the
+# (column, converter) order of the stock_quotes INSERT after (market, yf_ticker, fetched_at).
+_ALL_COLS = [
+    'ticker', 'rsi_signal', '_error',
+    'cmp', 'rsi', 'ema_20', 'ema_50', 'ema_200', 'macd', 'macd_signal',
+    'pe', 'pb', 'roe', 'opm', 'market_cap', 'volume', 'volume_20d_avg',
+    'volume_ratio', 'high_52w', 'low_52w', 'debt_to_equity', 'beta',
+    'current_ratio', 'revenue_growth', 'eps', 'dividend_yield',
+    'ret_1d', 'ret_1w', 'ret_1m', 'ret_3m', 'ret_6m', 'ret_1y',
+    'sector', 'industry', 'bb_upper', 'bb_lower', 'bb_pct',
+    'atr_14', 'stoch_k', 'stoch_d',
+]
+_ROW_SPEC = (
+    [('cmp', _fv), ('rsi', _fv), ('ema_20', _fv), ('ema_50', _fv), ('ema_200', _fv)]
+    + [('rsi_signal', lambda v: str(v or 'HOLD'))]
+    + [(c, _fv) for c in ('macd', 'macd_signal', 'pe', 'pb', 'roe', 'opm', 'market_cap')]
+    + [('volume', _iv), ('volume_20d_avg', _iv)]
+    + [(c, _fv) for c in (
+        'volume_ratio', 'high_52w', 'low_52w', 'debt_to_equity', 'beta', 'current_ratio',
+        'revenue_growth', 'eps', 'dividend_yield', 'ret_1d', 'ret_1w', 'ret_1m', 'ret_3m',
+        'ret_6m', 'ret_1y')]
+    + [('sector', _sv), ('industry', _sv)]
+    + [(c, _fv) for c in ('bb_upper', 'bb_lower', 'bb_pct', 'atr_14', 'stoch_k', 'stoch_d')]
+)
+
+
+def _valid_quote_rows(live_df: pd.DataFrame) -> pd.DataFrame:
+    """Drop rows with a blank ticker or an ``_error`` flag, and add any missing quote columns as None."""
+    error_mask = live_df.get('_error', pd.Series(False, index=live_df.index)).fillna(False).astype(bool)
+    ticker_mask = live_df['ticker'].notna() & (live_df['ticker'].astype(str).str.strip() != '') \
+        if 'ticker' in live_df.columns else pd.Series(False, index=live_df.index)
+    live_df = live_df[ticker_mask & ~error_mask].reset_index(drop=True)
+    for col in _ALL_COLS:
+        if col not in live_df.columns:
+            live_df[col] = None
+    return live_df
+
+
+def _build_quote_rows(market: str, live_df: pd.DataFrame, now: datetime) -> list[tuple]:
+    """Bind-parameter tuples for the stock_quotes upsert, one per valid row."""
+    rows: list[tuple] = []
+    # itertuples is ~5x faster than iterrows - avoid Series creation per row
+    for row in live_df.itertuples(index=False, name='Q'):
+        values = [conv(getattr(row, col)) for col, conv in _ROW_SPEC]
+        rows.append((market, str(row.ticker).strip(), now, *values))
+    return rows
+
+
 def upsert_quotes(market: str, live_df: pd.DataFrame) -> int:
     """
     Write live fetch results into stock_quotes.
@@ -119,94 +187,11 @@ def upsert_quotes(market: str, live_df: pd.DataFrame) -> int:
     _prepare(s)
     now = datetime.now(timezone.utc)
 
-    # Pre-filter invalid rows before iterating (avoids per-row checks inside the loop)
-    error_mask = live_df.get('_error', pd.Series(False, index=live_df.index)).fillna(False).astype(bool)
-    ticker_mask = live_df['ticker'].notna() & (live_df['ticker'].astype(str).str.strip() != '') \
-        if 'ticker' in live_df.columns else pd.Series(False, index=live_df.index)
-    live_df = live_df[ticker_mask & ~error_mask].reset_index(drop=True)
-
+    live_df = _valid_quote_rows(live_df)
     if live_df.empty:
         return 0
 
-    # itertuples is ~5x faster than iterrows — avoid Series creation per row
-    _ALL_COLS = [
-        'ticker', 'rsi_signal', '_error',
-        'cmp', 'rsi', 'ema_20', 'ema_50', 'ema_200', 'macd', 'macd_signal',
-        'pe', 'pb', 'roe', 'opm', 'market_cap', 'volume', 'volume_20d_avg',
-        'volume_ratio', 'high_52w', 'low_52w', 'debt_to_equity', 'beta',
-        'current_ratio', 'revenue_growth', 'eps', 'dividend_yield',
-        'ret_1d', 'ret_1w', 'ret_1m', 'ret_3m', 'ret_6m', 'ret_1y',
-        'sector', 'industry', 'bb_upper', 'bb_lower', 'bb_pct',
-        'atr_14', 'stoch_k', 'stoch_d',
-    ]
-    for col in _ALL_COLS:
-        if col not in live_df.columns:
-            live_df[col] = None
-
-    def _fv(v) -> Optional[float]:
-        try:
-            f = float(v)
-            return None if math.isnan(f) else f
-        except (TypeError, ValueError):
-            return None
-
-    def _iv(v) -> Optional[int]:
-        f = _fv(v)
-        return int(f) if f is not None else None
-
-    def _sv(v) -> Optional[str]:
-        if v is None or (isinstance(v, float) and math.isnan(v)):
-            return None
-        s = str(v).strip()
-        return s if s else None
-
-    rows: list[tuple] = []
-    for row in live_df.itertuples(index=False, name='Q'):
-        ticker = str(row.ticker).strip()
-        rows.append((
-            market,
-            ticker,
-            now,
-            _fv(row.cmp),
-            _fv(row.rsi),
-            _fv(row.ema_20),
-            _fv(row.ema_50),
-            _fv(row.ema_200),
-            str(getattr(row, 'rsi_signal', 'HOLD') or 'HOLD'),
-            _fv(row.macd),
-            _fv(row.macd_signal),
-            _fv(row.pe),
-            _fv(row.pb),
-            _fv(row.roe),
-            _fv(row.opm),
-            _fv(row.market_cap),
-            _iv(row.volume),
-            _iv(row.volume_20d_avg),
-            _fv(row.volume_ratio),
-            _fv(row.high_52w),
-            _fv(row.low_52w),
-            _fv(row.debt_to_equity),
-            _fv(row.beta),
-            _fv(row.current_ratio),
-            _fv(row.revenue_growth),
-            _fv(row.eps),
-            _fv(row.dividend_yield),
-            _fv(row.ret_1d),
-            _fv(row.ret_1w),
-            _fv(row.ret_1m),
-            _fv(row.ret_3m),
-            _fv(row.ret_6m),
-            _fv(row.ret_1y),
-            _sv(row.sector),
-            _sv(row.industry),
-            _fv(row.bb_upper),
-            _fv(row.bb_lower),
-            _fv(row.bb_pct),
-            _fv(row.atr_14),
-            _fv(row.stoch_k),
-            _fv(row.stoch_d),
-        ))
-
+    rows = _build_quote_rows(market, live_df, now)
     if not rows:
         return 0
 

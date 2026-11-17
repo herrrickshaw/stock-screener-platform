@@ -108,6 +108,146 @@ PIOTROSKI_HITS = {
 # REPORT GENERATION
 # ─────────────────────────────────────────────────────────────────────────────
 
+_REPORT_CSS = """
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .bull-market-caveat {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .bull-market-caveat strong {
+            color: #d32f2f;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        .section-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .stock-table th {
+            background-color: #f0f0f0;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+        }
+        .stock-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .stock-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        .symbol {
+            font-weight: 600;
+            color: #667eea;
+        }
+        .metric {
+            font-variant-numeric: tabular-nums;
+        }
+        .score-9 { color: #2e7d32; font-weight: 600; }
+        .score-8 { color: #558b2f; font-weight: 600; }
+        .score-7 { color: #f57f17; font-weight: 600; }
+        .score-6 { color: #e64a19; font-weight: 600; }
+        .score-excellent { background: #c8e6c9; padding: 2px 6px; border-radius: 3px; }
+        .score-good { background: #fff9c4; padding: 2px 6px; border-radius: 3px; }
+        .score-caution { background: #ffccbc; padding: 2px 6px; border-radius: 3px; }
+        .top-pick {
+            background: #e8f5e9;
+            padding: 12px;
+            border-left: 4px solid #4caf50;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .top-pick-title {
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 6px;
+        }
+        .top-pick-desc {
+            font-size: 12px;
+            color: #555;
+        }
+        .footer {
+            background-color: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+        .legend-item {
+            font-size: 12px;
+        }
+        .legend-item strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #667eea;
+        }
+    """
+
+
 class EnhancedDailyMailer:
     def __init__(self):
         self.report_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -121,144 +261,7 @@ class EnhancedDailyMailer:
 <html>
 <head>
     <meta charset="UTF-8">
-    <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-        }}
-        .container {{
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }}
-        .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }}
-        .header h1 {{
-            margin: 0;
-            font-size: 28px;
-            font-weight: 300;
-            letter-spacing: 1px;
-        }}
-        .header p {{
-            margin: 10px 0 0 0;
-            font-size: 14px;
-            opacity: 0.9;
-        }}
-        .content {{
-            padding: 30px;
-        }}
-        .bull-market-caveat {{
-            background: #fff3cd;
-            border-left: 4px solid #ff9800;
-            padding: 15px;
-            margin-bottom: 30px;
-            border-radius: 4px;
-            font-size: 13px;
-            line-height: 1.6;
-        }}
-        .bull-market-caveat strong {{
-            color: #d32f2f;
-        }}
-        .section {{
-            margin-bottom: 40px;
-        }}
-        .section-title {{
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #667eea;
-        }}
-        .section-description {{
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }}
-        .stock-table {{
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }}
-        .stock-table th {{
-            background-color: #f0f0f0;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #ddd;
-        }}
-        .stock-table td {{
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-        }}
-        .stock-table tr:hover {{
-            background-color: #f9f9f9;
-        }}
-        .symbol {{
-            font-weight: 600;
-            color: #667eea;
-        }}
-        .metric {{
-            font-variant-numeric: tabular-nums;
-        }}
-        .score-9 {{ color: #2e7d32; font-weight: 600; }}
-        .score-8 {{ color: #558b2f; font-weight: 600; }}
-        .score-7 {{ color: #f57f17; font-weight: 600; }}
-        .score-6 {{ color: #e64a19; font-weight: 600; }}
-        .score-excellent {{ background: #c8e6c9; padding: 2px 6px; border-radius: 3px; }}
-        .score-good {{ background: #fff9c4; padding: 2px 6px; border-radius: 3px; }}
-        .score-caution {{ background: #ffccbc; padding: 2px 6px; border-radius: 3px; }}
-        .top-pick {{
-            background: #e8f5e9;
-            padding: 12px;
-            border-left: 4px solid #4caf50;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }}
-        .top-pick-title {{
-            font-weight: 600;
-            color: #2e7d32;
-            margin-bottom: 6px;
-        }}
-        .top-pick-desc {{
-            font-size: 12px;
-            color: #555;
-        }}
-        .footer {{
-            background-color: #f5f5f5;
-            padding: 20px;
-            text-align: center;
-            color: #999;
-            font-size: 12px;
-            border-top: 1px solid #e0e0e0;
-        }}
-        .legend {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 6px;
-        }}
-        .legend-item {{
-            font-size: 12px;
-        }}
-        .legend-item strong {{
-            display: block;
-            margin-bottom: 4px;
-            color: #667eea;
-        }}
-    </style>
+    <style>{_REPORT_CSS}</style>
 </head>
 <body>
     <div class="container">
@@ -303,7 +306,20 @@ class EnhancedDailyMailer:
             {self._render_piotroski_section()}
 
             <!-- PORTFOLIO RECOMMENDATIONS -->
-            <div class="section">
+            {self._render_portfolio_guide()}
+
+        </div>
+
+        {self._render_footer()}
+    </div>
+</body>
+</html>
+"""
+        return html
+
+    def _render_portfolio_guide(self):
+        """Static tiered portfolio construction guide"""
+        return f"""<div class="section">
                 <div class="section-title">🎯 Portfolio Construction Guide</div>
                 <div class="top-pick">
                     <div class="top-pick-title">TIER A: Triple Winners (Darvas + Breakout + Piotroski 8+)</div>
@@ -329,20 +345,15 @@ class EnhancedDailyMailer:
                         Watch for momentum entry on these quality values
                     </div>
                 </div>
-            </div>
+            </div>"""
 
-        </div>
-
-        <div class="footer">
+    def _render_footer(self):
+        """Footer with category line and next-update date"""
+        return f"""<div class="footer">
             <p>Four Independent Screening Categories | Comprehensive Analysis | Bull Market Focus</p>
             <p>Darvas Box • Cash Conversion Cycle • Breakout Confirmation • Piotroski Quality</p>
             <p>Next update: {(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d at 08:30 AM')}</p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-        return html
+        </div>"""
 
     def _render_darvas_section(self):
         """Render Darvas Box momentum section"""

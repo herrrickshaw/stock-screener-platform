@@ -1,0 +1,118 @@
+{
+ "rows": [
+  {
+   "market": "us",
+   "country": "United States",
+   "flag": "\ud83c\uddfa\ud83c\uddf8",
+   "exchange": "NYSE / NASDAQ",
+   "instruments": 300,
+   "quotes": 300,
+   "coverage_pct": 100.0
+  },
+  {
+   "market": "india",
+   "country": "India",
+   "flag": "\ud83c\uddee\ud83c\uddf3",
+   "exchange": "NSE / BSE",
+   "instruments": 100,
+   "quotes": 40,
+   "coverage_pct": 40.0
+  },
+  {
+   "market": "japan",
+   "country": "Japan",
+   "flag": "\ud83c\uddef\ud83c\uddf5",
+   "exchange": "Tokyo SE (TSE)",
+   "instruments": 50,
+   "quotes": 0,
+   "coverage_pct": 0.0
+  },
+  {
+   "market": "korea",
+   "country": "South Korea",
+   "flag": "\ud83c\uddf0\ud83c\uddf7",
+   "exchange": "KRX (KOSPI+KOSDAQ)",
+   "instruments": 0,
+   "quotes": 0,
+   "coverage_pct": 0
+  },
+  {
+   "market": "china",
+   "country": "China",
+   "flag": "\ud83c\udde8\ud83c\uddf3",
+   "exchange": "SSE + SZSE",
+   "instruments": 0,
+   "quotes": 0,
+   "coverage_pct": 0
+  },
+  {
+   "market": "hong_kong",
+   "country": "Hong Kong",
+   "flag": "\ud83c\udded\ud83c\uddf0",
+   "exchange": "HKEX",
+   "instruments": 0,
+   "quotes": 0,
+   "coverage_pct": 0
+  },
+  {
+   "market": "canada",
+   "country": "Canada",
+   "flag": "\ud83c\udde8\ud83c\udde6",
+   "exchange": "TSX",
+   "instruments": 0,
+   "quotes": 0,
+   "coverage_pct": 0
+  },
+  {
+   "market": "europe",
+   "country": "United Kingdom",
+   "flag": "\ud83c\uddec\ud83c\udde7",
+   "exchange": "London Stock Exchange",
+   "suffix": ".L",
+   "instruments": 5,
+   "quotes": 2,
+   "coverage_pct": 46.2,
+   "note": "coverage estimated proportionally"
+  },
+  {
+   "market": "europe",
+   "country": "France",
+   "flag": "\ud83c\uddeb\ud83c\uddf7",
+   "exchange": "Euronext Paris",
+   "suffix": ".PA",
+   "instruments": 3,
+   "quotes": 1,
+   "coverage_pct": 46.2,
+   "note": "coverage estimated proportionally"
+  },
+  {
+   "market": "europe",
+   "country": "Switzerland",
+   "flag": "\ud83c\udde8\ud83c\udded",
+   "exchange": "SIX Swiss",
+   "suffix": ".SW",
+   "instruments": 3,
+   "quotes": 1,
+   "coverage_pct": 46.2,
+   "note": "coverage estimated proportionally"
+  },
+  {
+   "market": "europe",
+   "country": "Mystery Bourse",
+   "flag": "\ud83c\uddea\ud83c\uddfa",
+   "exchange": "Mystery Bourse",
+   "suffix": "",
+   "instruments": 2,
+   "quotes": 1,
+   "coverage_pct": 46.2,
+   "note": "coverage estimated proportionally"
+  }
+ ],
+ "summary": {
+  "total_instruments": 463,
+  "total_quotes": 346,
+  "total_countries": 11,
+  "markets": 8,
+  "overall_coverage": 74.7
+ }
+}

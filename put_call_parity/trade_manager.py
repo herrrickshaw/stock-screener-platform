@@ -15,7 +15,7 @@ import logging
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from .broker import BrokerBase
 from .config import INSTRUMENTS, POSITION_FILE
@@ -289,8 +289,8 @@ class TradeManager:
     # P&L
     # -----------------------------------------------------------------------
     def _calculate_pnl(self, position: Dict, exit_prices: Dict[str, float], cfg) -> float:
-        lot_size = cfg.lot_size
-        lots = position["lots"]
+        lot_size = cfg.lot_size  # noqa: F841
+        lots = position["lots"]  # noqa: F841  (KeyError guard kept)
         qty = position["qty"]
 
         if position["direction"] == "SHORT_CALL_LONG_PUT":

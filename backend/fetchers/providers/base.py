@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from typing import Optional
 
 import pandas as pd
@@ -81,6 +81,126 @@ class QuoteData:
         return QuoteData(**d)
 
 
+def _rsi14(closes: pd.Series) -> Optional[float]:
+    """Wilder's smoothed RSI-14; None below 15 bars."""
+    if len(closes) < 15:
+        return None
+    delta = closes.diff().dropna()
+    gains = delta.clip(lower=0)
+    losses = (-delta).clip(lower=0)
+    ag = float(gains.ewm(alpha=1/14, adjust=False).mean().iloc[-1])
+    al = float(losses.ewm(alpha=1/14, adjust=False).mean().iloc[-1])
+    return 100.0 if al == 0 else round(100 - 100 / (1 + ag / al), 2)
+
+
+def _emas(closes: pd.Series) -> tuple:
+    n = len(closes)
+    ema20 = round(float(closes.ewm(span=20, adjust=False).mean().iloc[-1]), 2)
+    ema50 = round(float(closes.ewm(span=50, adjust=False).mean().iloc[-1]), 2)
+    ema200 = round(float(closes.ewm(span=200, adjust=False).mean().iloc[-1]), 2) if n >= 50 else None
+    return ema20, ema50, ema200
+
+
+def _macd(closes: pd.Series) -> tuple:
+    """MACD (12/26/9) line and signal; each None until enough bars."""
+    n = len(closes)
+    if n < 26:
+        return None, None
+    ml = closes.ewm(span=12, adjust=False).mean() - closes.ewm(span=26, adjust=False).mean()
+    macd_val = round(float(ml.iloc[-1]), 4)
+    macd_sig = round(float(ml.ewm(span=9, adjust=False).mean().iloc[-1]), 4) if n >= 35 else None
+    return macd_val, macd_sig
+
+
+def _bollinger(closes: pd.Series, cmp: float) -> tuple:
+    """20-day SMA +/- 2 sigma bands and %B position."""
+    if len(closes) < 20:
+        return None, None, None
+    tail20 = closes.iloc[-20:]
+    sma20 = float(tail20.mean())
+    std20 = float(tail20.std(ddof=1))
+    bb_upper = round(sma20 + 2 * std20, 2)
+    bb_lower = round(sma20 - 2 * std20, 2)
+    bb_range = bb_upper - bb_lower
+    bb_pct = round((cmp - bb_lower) / bb_range, 3) if bb_range > 0 else None
+    return bb_upper, bb_lower, bb_pct
+
+
+def _atr14(closes: pd.Series, highs, lows) -> Optional[float]:
+    """Wilder's ATR-14; needs highs and lows."""
+    if highs is None or lows is None:
+        return None
+    h_s = highs.dropna()
+    l_s = lows.dropna()
+    min_len = min(len(h_s), len(l_s), len(closes))
+    if min_len < 15:
+        return None
+    h_a = h_s.iloc[-min_len:].values
+    l_a = l_s.iloc[-min_len:].values
+    c_a = closes.iloc[-min_len:].values
+    # True Range vectors (skip first bar - no previous close)
+    tr_hl = h_a[1:] - l_a[1:]
+    tr_hpc = abs(h_a[1:] - c_a[:-1])
+    tr_lpc = abs(l_a[1:] - c_a[:-1])
+    tr = pd.Series([max(a, b, c) for a, b, c in zip(tr_hl, tr_hpc, tr_lpc)])
+    return round(float(tr.ewm(alpha=1/14, adjust=False).mean().iloc[-1]), 4)
+
+
+def _stochastic(closes: pd.Series, highs, lows) -> tuple:
+    """Stochastic %K/%D (14/3); needs highs and lows."""
+    if highs is None or lows is None:
+        return None, None
+    h_s = highs.dropna()
+    l_s = lows.dropna()
+    min_len = min(len(h_s), len(l_s), len(closes))
+    if min_len < 17:  # 14 for %K + 3 for %D
+        return None, None
+    c_s = closes.iloc[-min_len:]
+    h_14 = h_s.iloc[-min_len:].rolling(14).max()
+    l_14 = l_s.iloc[-min_len:].rolling(14).min()
+    denom = (h_14 - l_14).replace(0, float('nan'))
+    k_series = pd.Series(100 * (c_s.values - l_14.values) / denom.values).dropna()
+    if len(k_series) >= 3:
+        return round(float(k_series.iloc[-1]), 2), round(float(k_series.iloc[-3:].mean()), 2)
+    return None, None
+
+
+def _period_return(closes: pd.Series, cmp: float, nb: int) -> Optional[float]:
+    if len(closes) <= nb:
+        return None
+    prev = float(closes.iloc[-(nb + 1)])
+    return round((cmp - prev) / prev * 100, 2) if prev > 0 and not math.isnan(prev) else None
+
+
+def _return_since_first(closes: pd.Series, cmp: float) -> Optional[float]:
+    first = float(closes.iloc[0])
+    return round((cmp - first) / first * 100, 2) if first > 0 and not math.isnan(first) else None
+
+
+def _volume_metrics(volumes: Optional[pd.Series]) -> tuple:
+    """(latest volume, 20d average, ratio)."""
+    vol = vol_avg = vol_ratio = None
+    if volumes is not None:
+        vs = volumes.dropna()
+        if not vs.empty:
+            vol = int(vs.iloc[-1])
+            if len(vs) >= 5:
+                vw = min(20, len(vs))
+                vol_avg = int(vs.iloc[-vw:].mean())
+                vol_ratio = round(vol / vol_avg, 2) if vol_avg > 0 else None
+    return vol, vol_avg, vol_ratio
+
+
+def _rsi_signal(rsi: Optional[float], cmp: float, ema50: float) -> str:
+    if rsi is None:
+        return 'HOLD'
+    if rsi < 30 and cmp > ema50:
+        return 'BUY'
+    if rsi > 70 and cmp < ema50:
+        return 'SELL'
+    return 'HOLD'
+
+
 def compute_technicals(
     closes: pd.Series,
     volumes: Optional[pd.Series] = None,
@@ -107,131 +227,29 @@ def compute_technicals(
         return {}
 
     cmp = float(closes.iloc[-1])
-
-    # ── RSI-14 (Wilder's smoothed) ────────────────────────────────────────────
-    rsi = None
-    if n >= 15:
-        delta = closes.diff().dropna()
-        gains  = delta.clip(lower=0)
-        losses = (-delta).clip(lower=0)
-        ag = float(gains.ewm(alpha=1/14, adjust=False).mean().iloc[-1])
-        al = float(losses.ewm(alpha=1/14, adjust=False).mean().iloc[-1])
-        rsi = 100.0 if al == 0 else round(100 - 100 / (1 + ag / al), 2)
-
-    # ── EMAs ──────────────────────────────────────────────────────────────────
-    ema20  = round(float(closes.ewm(span=20,  adjust=False).mean().iloc[-1]), 2)
-    ema50  = round(float(closes.ewm(span=50,  adjust=False).mean().iloc[-1]), 2)
-    ema200 = round(float(closes.ewm(span=200, adjust=False).mean().iloc[-1]), 2) if n >= 50 else None
-
-    # ── MACD (12/26/9) ───────────────────────────────────────────────────────
-    macd_val = macd_sig = None
-    if n >= 26:
-        e12 = closes.ewm(span=12, adjust=False).mean()
-        e26 = closes.ewm(span=26, adjust=False).mean()
-        ml  = e12 - e26
-        macd_val = round(float(ml.iloc[-1]), 4)
-        if n >= 35:
-            macd_sig = round(float(ml.ewm(span=9, adjust=False).mean().iloc[-1]), 4)
-
-    # ── 52-Week high / low (optimised: slice last 252 bars, no rolling) ───────
-    w   = min(252, n)
+    rsi = _rsi14(closes)
+    ema20, ema50, ema200 = _emas(closes)
+    macd_val, macd_sig = _macd(closes)
+    # 52-week high / low (slice last 252 bars, no rolling)
+    w = min(252, n)
     h52 = round(float(closes.iloc[-w:].max()), 2)
     l52 = round(float(closes.iloc[-w:].min()), 2)
-
-    # ── Bollinger Bands (20-day SMA ± 2σ) ────────────────────────────────────
-    bb_upper = bb_lower = bb_pct = None
-    if n >= 20:
-        tail20  = closes.iloc[-20:]
-        sma20   = float(tail20.mean())
-        std20   = float(tail20.std(ddof=1))
-        bb_upper = round(sma20 + 2 * std20, 2)
-        bb_lower = round(sma20 - 2 * std20, 2)
-        bb_range = bb_upper - bb_lower
-        if bb_range > 0:
-            bb_pct = round((cmp - bb_lower) / bb_range, 3)
-
-    # ── ATR-14 (Wilder's) — needs highs/lows ─────────────────────────────────
-    atr_14 = None
-    if highs is not None and lows is not None:
-        h_s = highs.dropna()
-        l_s = lows.dropna()
-        min_len = min(len(h_s), len(l_s), n)
-        if min_len >= 15:
-            h_a = h_s.iloc[-min_len:].values
-            l_a = l_s.iloc[-min_len:].values
-            c_a = closes.iloc[-min_len:].values
-            # True Range vectors (skip first bar — no previous close)
-            tr_hl   = h_a[1:] - l_a[1:]
-            tr_hpc  = abs(h_a[1:] - c_a[:-1])
-            tr_lpc  = abs(l_a[1:] - c_a[:-1])
-            tr = pd.Series(
-                [max(a, b, c) for a, b, c in zip(tr_hl, tr_hpc, tr_lpc)]
-            )
-            atr_14 = round(float(tr.ewm(alpha=1/14, adjust=False).mean().iloc[-1]), 4)
-
-    # ── Stochastic %K/%D (14/3) — needs highs/lows ───────────────────────────
-    stoch_k = stoch_d = None
-    if highs is not None and lows is not None:
-        h_s = highs.dropna()
-        l_s = lows.dropna()
-        min_len = min(len(h_s), len(l_s), n)
-        if min_len >= 17:  # 14 for %K + 3 for %D
-            c_s  = closes.iloc[-min_len:]
-            h_s2 = h_s.iloc[-min_len:]
-            l_s2 = l_s.iloc[-min_len:]
-            h_14 = h_s2.rolling(14).max()
-            l_14 = l_s2.rolling(14).min()
-            denom = (h_14 - l_14).replace(0, float('nan'))
-            k_series = 100 * (c_s.values - l_14.values) / denom.values
-            k_series = pd.Series(k_series).dropna()
-            if len(k_series) >= 3:
-                stoch_k = round(float(k_series.iloc[-1]), 2)
-                stoch_d = round(float(k_series.iloc[-3:].mean()), 2)
-
-    # ── Period returns ────────────────────────────────────────────────────────
-    def _ret(nb: int) -> Optional[float]:
-        if n <= nb:
-            return None
-        prev = float(closes.iloc[-(nb + 1)])
-        return round((cmp - prev) / prev * 100, 2) if prev > 0 and not math.isnan(prev) else None
-
-    ret_1y = None
-    if n >= 2:
-        first = float(closes.iloc[0])
-        ret_1y = round((cmp - first) / first * 100, 2) if first > 0 and not math.isnan(first) else None
-
-    # ── Volume metrics ────────────────────────────────────────────────────────
-    vol = vol_avg = vol_ratio = None
-    if volumes is not None:
-        vs = volumes.dropna()
-        if not vs.empty:
-            vol = int(vs.iloc[-1])
-            if len(vs) >= 5:
-                vw      = min(20, len(vs))
-                vol_avg = int(vs.iloc[-vw:].mean())
-                vol_ratio = round(vol / vol_avg, 2) if vol_avg > 0 else None
-
-    # ── RSI signal ────────────────────────────────────────────────────────────
-    if rsi is None:
-        sig = 'HOLD'
-    elif rsi < 30 and cmp > ema50:
-        sig = 'BUY'
-    elif rsi > 70 and cmp < ema50:
-        sig = 'SELL'
-    else:
-        sig = 'HOLD'
+    bb_upper, bb_lower, bb_pct = _bollinger(closes, cmp)
+    stoch_k, stoch_d = _stochastic(closes, highs, lows)
+    vol, vol_avg, vol_ratio = _volume_metrics(volumes)
 
     return {
         'cmp': round(cmp, 2),
         'rsi': rsi,
         'ema_20': ema20, 'ema_50': ema50, 'ema_200': ema200,
-        'macd': macd_val, 'macd_signal': macd_sig, 'rsi_signal': sig,
+        'macd': macd_val, 'macd_signal': macd_sig, 'rsi_signal': _rsi_signal(rsi, cmp, ema50),
         'high_52w': h52, 'low_52w': l52,
         'bb_upper': bb_upper, 'bb_lower': bb_lower, 'bb_pct': bb_pct,
-        'atr_14': atr_14, 'stoch_k': stoch_k, 'stoch_d': stoch_d,
+        'atr_14': _atr14(closes, highs, lows), 'stoch_k': stoch_k, 'stoch_d': stoch_d,
         'volume': vol, 'volume_20d_avg': vol_avg, 'volume_ratio': vol_ratio,
-        'ret_1d': _ret(1), 'ret_1w': _ret(5), 'ret_1m': _ret(21),
-        'ret_3m': _ret(63), 'ret_6m': _ret(126), 'ret_1y': ret_1y,
+        'ret_1d': _period_return(closes, cmp, 1), 'ret_1w': _period_return(closes, cmp, 5),
+        'ret_1m': _period_return(closes, cmp, 21), 'ret_3m': _period_return(closes, cmp, 63),
+        'ret_6m': _period_return(closes, cmp, 126), 'ret_1y': _return_since_first(closes, cmp),
     }
 
 

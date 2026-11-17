@@ -28,3 +28,8 @@ data/canada_list.csv
 uploads/
 .env.providers
 .env
+
+# local tooling
+.venv/
+.pytest_cache/
+.ruff_cache/

@@ -32,7 +32,7 @@ def load_kaggle_dataset():
         try:
             path = kagglehub.model_download(dataset_ref)
             print(f"   Downloaded to: {path}")
-        except:
+        except Exception:
             # Try alternative approach
             try:
                 from kagglehub.clients import ApiClient
@@ -40,7 +40,7 @@ def load_kaggle_dataset():
                 # List files in dataset
                 files = api_client.list_dataset_files(dataset_ref)
                 print(f"   Dataset files: {files}")
-            except:
+            except Exception:
                 pass
 
         # Try using pandas directly with Kaggle API

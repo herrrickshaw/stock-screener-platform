@@ -45,6 +45,11 @@ from pathlib import Path
 # ── Third-party ───────────────────────────────────────────────────────────────
 import pandas as pd
 
+from piotroski_core import f_score_components, interpret
+from coffee_can_core import (debt_to_equity_criterion, no_loss_year_criterion,
+                             revenue_cagr_criterion, series)
+from darvas_box import classify_box, confirmed_bottom, confirmed_top, find_col, numeric_list
+
 try:
     import yfinance as yf
 except ImportError:
@@ -428,14 +433,6 @@ def compute_darvas_box(df: pd.DataFrame, confirm: int = DARVAS_CONFIRM) -> dict:
         return {"signal": "INSUFFICIENT_DATA", "box_top": None, "box_bottom": None,
                 "note": "Empty OHLC DataFrame"}
 
-    # ── Locate OHLC columns (yfinance uses 'High', 'Low', 'Close') ────────────
-    def find_col(df, candidates):
-        for c in candidates:
-            match = next((col for col in df.columns if c.upper() in col.upper()), None)
-            if match:
-                return match
-        return None
-
     h_col = find_col(df, ["High",  "CH_TRADE_HIGH_PRICE", "DAYHIGH"])
     l_col = find_col(df, ["Low",   "CH_TRADE_LOW_PRICE",  "DAYLOW"])
     c_col = find_col(df, ["Close", "CH_CLOSING_PRICE",    "LAST"])
@@ -444,9 +441,9 @@ def compute_darvas_box(df: pd.DataFrame, confirm: int = DARVAS_CONFIRM) -> dict:
         return {"signal": "INSUFFICIENT_DATA", "box_top": None, "box_bottom": None,
                 "note": f"Could not identify OHLC columns in {list(df.columns)}"}
 
-    all_highs  = pd.to_numeric(df[h_col], errors="coerce").fillna(0).tolist()
-    all_lows   = pd.to_numeric(df[l_col], errors="coerce").fillna(0).tolist()
-    all_closes = pd.to_numeric(df[c_col], errors="coerce").fillna(0).tolist()
+    all_highs  = numeric_list(df, h_col)
+    all_lows   = numeric_list(df, l_col)
+    all_closes = numeric_list(df, c_col)
 
     if len(all_closes) < confirm + 5:
         return {"signal": "INSUFFICIENT_DATA", "box_top": None, "box_bottom": None,
@@ -456,65 +453,18 @@ def compute_darvas_box(df: pd.DataFrame, confirm: int = DARVAS_CONFIRM) -> dict:
     current = all_closes[-1]
     highs   = all_highs[:-1]
     lows    = all_lows[:-1]
-    n       = len(highs)
 
-    # ── Step 1: most recent confirmed box top ─────────────────────────────────
-    box_top_idx = None
-    box_top     = None
-    for i in range(n - confirm - 1, -1, -1):
-        candidate = highs[i]
-        if candidate == 0:
-            continue
-        window = highs[i + 1 : i + 1 + confirm]
-        if len(window) == confirm and all(h < candidate for h in window):
-            box_top_idx = i
-            box_top     = candidate
-            break
-
+    box_top_idx, box_top = confirmed_top(highs, confirm)
     if box_top is None:
         return {"signal": "NO_BOX", "box_top": None, "box_bottom": None,
                 "note": "No confirmed box top in look-back window"}
 
-    # ── Step 2: confirmed box bottom (from box-top day onward, history only) ──
-    segment    = lows[box_top_idx:]
-    box_bottom = None
-    for i in range(len(segment) - confirm):
-        candidate = segment[i]
-        if candidate == 0:
-            continue
-        window = segment[i + 1 : i + 1 + confirm]
-        if len(window) == confirm and all(l > candidate for l in window):
-            box_bottom = candidate
-            break
-
-    if box_bottom is None:
-        valid = [l for l in segment if l > 0]
-        box_bottom = min(valid) if valid else None
-
+    box_bottom = confirmed_bottom(lows, box_top_idx, confirm)
     if box_bottom is None:
         return {"signal": "NO_BOX", "box_top": box_top, "box_bottom": None,
                 "note": "Could not confirm a box bottom"}
 
-    # ── Step 3: classify today's close against the historical box ─────────────
-    if   current > box_top:    signal = "BREAKOUT_BUY"
-    elif current < box_bottom: signal = "BREAKDOWN_SELL"
-    else:                      signal = "IN_BOX"
-
-    box_range      = box_top - box_bottom
-    pos_in_box     = ((current - box_bottom) / box_range * 100) if box_range else 0
-    upside_to_top  = ((box_top - current) / current * 100)      if current   else 0
-
-    return {
-        "signal":              signal,
-        "box_top":             round(box_top,    2),
-        "box_bottom":          round(box_bottom, 2),
-        "current_price":       round(current,    2),
-        "box_range":           round(box_range,  2),
-        "position_in_box_pct": round(pos_in_box,    1),
-        "upside_to_top_pct":   round(upside_to_top, 2),
-        "confirm_days":        confirm,
-        "data_points":         len(all_closes),
-    }
+    return classify_box(current, box_top, box_bottom, confirm, len(all_closes))
 
 
 def display_darvas_box(result: dict):
@@ -574,97 +524,14 @@ def compute_piotroski_score(ticker: yf.Ticker, symbol: str = "") -> dict:
     if inc is None or inc.empty:
         return {"symbol": symbol, "error": "No income statement data available"}
 
-    scores  = {}
-    details = {}
-
-    # ── Profitability ─────────────────────────────────────────────────────────
-    net_inc_0  = _row(inc, "Net Income", col=0)
-    assets_0   = _row(bal, "Total Assets", col=0)
-    roa_0      = (net_inc_0 / assets_0) if (net_inc_0 and assets_0) else None
-
-    net_inc_1  = _row(inc, "Net Income", col=1)
-    assets_1   = _row(bal, "Total Assets", col=1)
-    roa_1      = (net_inc_1 / assets_1) if (net_inc_1 and assets_1) else None
-
-    scores["F1_ROA_positive"]     = 1 if (roa_0 and roa_0 > 0) else 0
-    details["ROA_current_%"]      = round(roa_0 * 100, 2) if roa_0 else "N/A"
-
-    ocf_0 = _row(cf, "Operating Cash Flow", "Total Cash From Operating Activities", col=0)
-    scores["F2_OCF_positive"]     = 1 if (ocf_0 and ocf_0 > 0) else 0
-    details["OCF_current_$M"]     = round(ocf_0 / 1e6, 1) if ocf_0 else "N/A"
-
-    if roa_0 is not None and roa_1 is not None:
-        scores["F3_ROA_improving"]  = 1 if roa_0 > roa_1 else 0
-    else:
-        scores["F3_ROA_improving"]  = 0
-    details["ROA_prev_%"]         = round(roa_1 * 100, 2) if roa_1 else "N/A"
-
-    if ocf_0 and assets_0 and roa_0 is not None:
-        scores["F4_Accruals"]       = 1 if (ocf_0 / assets_0) > roa_0 else 0
-    else:
-        scores["F4_Accruals"]       = 0
-
-    # ── Leverage & Liquidity ──────────────────────────────────────────────────
-    ltd_0  = _row(bal, "Long Term Debt", col=0) or 0
-    ltd_1  = _row(bal, "Long Term Debt", col=1) or 0
-    lev_0  = (ltd_0 / assets_0) if assets_0 else None
-    lev_1  = (ltd_1 / assets_1) if assets_1 else None
-    if lev_0 is not None and lev_1 is not None:
-        scores["F5_Leverage_down"]  = 1 if lev_0 < lev_1 else 0
-    else:
-        scores["F5_Leverage_down"]  = 0
-    details["LTD_ratio_curr_%"]   = round(lev_0 * 100, 2) if lev_0 else "N/A"
-    details["LTD_ratio_prev_%"]   = round(lev_1 * 100, 2) if lev_1 else "N/A"
-
-    ca_0  = _row(bal, "Current Assets", "Total Current Assets",       col=0)
-    cl_0  = _row(bal, "Current Liabilities", "Total Current Liabilities", col=0)
-    ca_1  = _row(bal, "Current Assets", "Total Current Assets",       col=1)
-    cl_1  = _row(bal, "Current Liabilities", "Total Current Liabilities", col=1)
-    cr_0  = (ca_0 / cl_0) if (ca_0 and cl_0) else None
-    cr_1  = (ca_1 / cl_1) if (ca_1 and cl_1) else None
-    if cr_0 is not None and cr_1 is not None:
-        scores["F6_CurrentRatio_up"] = 1 if cr_0 > cr_1 else 0
-    else:
-        scores["F6_CurrentRatio_up"] = 0
-    details["CurrentRatio_curr"]  = round(cr_0, 2) if cr_0 else "N/A"
-    details["CurrentRatio_prev"]  = round(cr_1, 2) if cr_1 else "N/A"
-
-    sh_0  = _row(bal, "Share Issued", col=0)
-    sh_1  = _row(bal, "Share Issued", col=1)
-    scores["F7_No_dilution"]      = (1 if sh_0 <= sh_1 else 0) if (sh_0 and sh_1) else 1
-    details["Shares_curr_M"]      = round(sh_0 / 1e6, 1) if sh_0 else "N/A"
-
-    # ── Operating Efficiency ──────────────────────────────────────────────────
-    rev_0 = _row(inc, "Total Revenue", col=0)
-    gp_0  = _row(inc, "Gross Profit",  col=0)
-    rev_1 = _row(inc, "Total Revenue", col=1)
-    gp_1  = _row(inc, "Gross Profit",  col=1)
-    gm_0  = (gp_0 / rev_0) if (gp_0 and rev_0) else None
-    gm_1  = (gp_1 / rev_1) if (gp_1 and rev_1) else None
-    if gm_0 is not None and gm_1 is not None:
-        scores["F8_GrossMargin_up"]  = 1 if gm_0 > gm_1 else 0
-    else:
-        scores["F8_GrossMargin_up"]  = 0
-    details["GrossMargin_curr_%"]  = round(gm_0 * 100, 2) if gm_0 else "N/A"
-    details["GrossMargin_prev_%"]  = round(gm_1 * 100, 2) if gm_1 else "N/A"
-
-    at_0 = (rev_0 / assets_0) if (rev_0 and assets_0) else None
-    at_1 = (rev_1 / assets_1) if (rev_1 and assets_1) else None
-    if at_0 is not None and at_1 is not None:
-        scores["F9_AssetTurnover_up"] = 1 if at_0 > at_1 else 0
-    else:
-        scores["F9_AssetTurnover_up"] = 0
-    details["AssetTurnover_curr"]  = round(at_0, 3) if at_0 else "N/A"
-    details["AssetTurnover_prev"]  = round(at_1, 3) if at_1 else "N/A"
-
-    total  = sum(scores.values())
-    interp = (
-        "STRONG — likely outperformer" if total >= 7 else
-        "MODERATE — neutral stance"    if total >= 4 else
-        "WEAK — avoid or short candidate"
+    scores, details = f_score_components(
+        inc, bal, cf, _row,
+        ocf_label="OCF_current_$M", ocf_divisor=1e6, ocf_digits=1,
+        echo_shares=True,
     )
+    total = sum(scores.values())
     return {
-        "symbol": symbol, "f_score": total, "interpretation": interp,
+        "symbol": symbol, "f_score": total, "interpretation": interpret(total),
         "component_scores": scores, "details": details,
     }
 
@@ -731,29 +598,17 @@ def compute_coffee_can(ticker: yf.Ticker, symbol: str = "") -> dict:
     if inc is None or inc.empty:
         return {"symbol": symbol, "error": "No income statement data available"}
 
-    def series(df, *rows):
-        for name in rows:
-            if df is not None and name in df.index:
-                return [float(v) for v in df.loc[name].dropna() if pd.notna(v)]
-        return []
-
     criteria = {}
     details  = {}
 
-    # ── C1: Revenue CAGR > 10% ───────────────────────────────────────────────
-    revs = series(inc, "Total Revenue")
-    if len(revs) >= 2:
-        years = len(revs) - 1
-        cagr  = ((revs[0] / revs[-1]) ** (1 / years) - 1) * 100 if revs[-1] > 0 else None
-        criteria["C1_Revenue_CAGR_gt10"] = 1 if (cagr and cagr > 10) else 0
-        details["Revenue_CAGR_%"]         = round(cagr, 2) if cagr else "N/A"
-        details["Revenue_years"]           = years
-    else:
-        criteria["C1_Revenue_CAGR_gt10"] = 0
-        details["Revenue_CAGR_%"]         = "N/A"
+    def add(part):
+        criteria.update(part[0])
+        details.update(part[1])
 
-    # ── C2: Return on Equity > 15% avg ───────────────────────────────────────
-    # ROE = Net Income / Shareholders' Equity
+    # C1: Revenue CAGR > 10%
+    add(revenue_cagr_criterion(inc, "C1_Revenue_CAGR_gt10"))
+
+    # C2: Return on Equity > 15% avg  (ROE = Net Income / Shareholders' Equity)
     ni_s  = series(inc, "Net Income")
     eq_s  = series(bal, "Stockholders Equity", "Total Stockholder Equity",
                    "Total Equity Gross Minority Interest")
@@ -771,24 +626,10 @@ def compute_coffee_can(ticker: yf.Ticker, symbol: str = "") -> dict:
         criteria["C2_ROE_gt15"]   = 0
         details["ROE_avg_%"]       = "N/A"
 
-    # ── C3: Debt/Equity < 1 ──────────────────────────────────────────────────
-    # yfinance info.debtToEquity is in percent in some builds (45.2 means 0.452×).
-    de_raw = info.get("debtToEquity")
-    if de_raw is not None:
-        de = de_raw / 100 if de_raw > 10 else de_raw
-        criteria["C3_LowDebt"]     = 1 if de < 1 else 0
-        details["Debt_to_Equity"]  = round(de, 2)
-    else:
-        ltd_s = series(bal, "Long Term Debt")
-        if ltd_s and eq_s and eq_s[0] != 0:
-            de = ltd_s[0] / abs(eq_s[0])
-            criteria["C3_LowDebt"]     = 1 if de < 1 else 0
-            details["Debt_to_Equity"]  = round(de, 2)
-        else:
-            criteria["C3_LowDebt"]     = 0
-            details["Debt_to_Equity"]  = "N/A"
+    # C3: Debt/Equity < 1 (yfinance info.debtToEquity is in percent in some builds)
+    add(debt_to_equity_criterion(info, bal, eq_s, abs_equity=True))
 
-    # ── C4: Market Cap ≥ $1B ─────────────────────────────────────────────────
+    # C4: Market Cap ≥ $1B
     mcap = info.get("marketCap")
     try:
         mcap_fi = ticker.fast_info.market_cap
@@ -798,32 +639,11 @@ def compute_coffee_can(ticker: yf.Ticker, symbol: str = "") -> dict:
     criteria["C4_MCap_ge1B"]    = 1 if (mcap and mcap >= 1e9) else 0
     details["Market_Cap"]        = fmt_large(mcap) if mcap else "N/A"
 
-    # ── C5: No loss year ─────────────────────────────────────────────────────
-    if ni_s:
-        all_profit = all(n > 0 for n in ni_s)
-        criteria["C5_NoProfitLoss"] = 1 if all_profit else 0
-        details["Loss_years"]        = sum(1 for n in ni_s if n <= 0)
-        details["Years_analysed"]    = len(ni_s)
-    else:
-        criteria["C5_NoProfitLoss"] = 0
+    # C5: No loss year
+    add(no_loss_year_criterion(ni_s))
 
-    # ── C6: Free Cash Flow > 0 (US bonus criterion) ───────────────────────────
-    # Free Cash Flow = Operating Cash Flow − Capital Expenditure
-    fcf_s = series(cf, "Free Cash Flow")
-    if fcf_s:
-        criteria["C6_FreeCashFlow_pos"] = 1 if fcf_s[0] > 0 else 0
-        details["FCF_latest_$M"]         = round(fcf_s[0] / 1e6, 1)
-    else:
-        # Compute OCF - CapEx if FCF row not directly available
-        ocf_s  = series(cf, "Operating Cash Flow", "Total Cash From Operating Activities")
-        capex_s = series(cf, "Capital Expenditure", "Capital Expenditures")
-        if ocf_s and capex_s:
-            fcf = ocf_s[0] - abs(capex_s[0])
-            criteria["C6_FreeCashFlow_pos"] = 1 if fcf > 0 else 0
-            details["FCF_latest_$M"]         = round(fcf / 1e6, 1)
-        else:
-            criteria["C6_FreeCashFlow_pos"] = 0
-            details["FCF_latest_$M"]         = "N/A"
+    # C6: Free Cash Flow > 0 (US bonus criterion)
+    add(_free_cash_flow_criterion(cf))
 
     total    = sum(criteria.values())
     max_pts  = len(criteria)
@@ -833,6 +653,20 @@ def compute_coffee_can(ticker: yf.Ticker, symbol: str = "") -> dict:
         "symbol": symbol, "qualifies": qualifies,
         "score": f"{total}/{max_pts}", "criteria": criteria, "details": details,
     }
+
+
+def _free_cash_flow_criterion(cf) -> tuple:
+    """C6: latest free cash flow > 0 (Operating Cash Flow - CapEx when the FCF row is absent)."""
+    fcf_s = series(cf, "Free Cash Flow")
+    if fcf_s:
+        return ({"C6_FreeCashFlow_pos": 1 if fcf_s[0] > 0 else 0},
+                {"FCF_latest_$M": round(fcf_s[0] / 1e6, 1)})
+    ocf_s = series(cf, "Operating Cash Flow", "Total Cash From Operating Activities")
+    capex_s = series(cf, "Capital Expenditure", "Capital Expenditures")
+    if ocf_s and capex_s:
+        fcf = ocf_s[0] - abs(capex_s[0])
+        return {"C6_FreeCashFlow_pos": 1 if fcf > 0 else 0}, {"FCF_latest_$M": round(fcf / 1e6, 1)}
+    return {"C6_FreeCashFlow_pos": 0}, {"FCF_latest_$M": "N/A"}
 
 
 def display_coffee_can(result: dict):

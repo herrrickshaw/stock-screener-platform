@@ -1,0 +1,27 @@
+{
+ "cost": 2496.156,
+ "df": 0.9946717798365894,
+ "key": "BANKNIFTY",
+ "sigs": [
+  {
+   "call_mid": 1306.0,
+   "call_symbol": "C49900",
+   "direction": "SHORT_CALL_LONG_PUT",
+   "dte": 12.0,
+   "expiry": "2099-01-01",
+   "futures_price": 51000.0,
+   "futures_symbol": "FUT",
+   "instrument": "BANKNIFTY",
+   "lots": 2,
+   "net_deviation": 2.452063028952267,
+   "observed_spread": 1183.5,
+   "put_mid": 122.5,
+   "put_symbol": "P49900",
+   "raw_deviation": 85.84817502895226,
+   "strike": 49900.0,
+   "theoretical_spread": 1097.6518249710477,
+   "transaction_cost": 83.39611199999999
+  }
+ ],
+ "th": 997.8652954282252
+}

@@ -1,0 +1,411 @@
+{
+ "full": {
+  "symbol": "SYM",
+  "f_score": 7,
+  "interpretation": "STRONG \u2014 likely outperformer",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 1,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 1,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 1,
+   "F9_AssetTurnover_up": 1
+  },
+  "details": {
+   "ROA_current_%": 180.83,
+   "OCF_current_Cr": 14.62,
+   "ROA_prev_%": 174.32,
+   "LTD_ratio_curr_%": 231.87,
+   "LTD_ratio_prev_%": 83.34,
+   "CurrentRatio_curr": 2.62,
+   "CurrentRatio_prev": 0.81,
+   "GrossMargin_curr_%": 136.85,
+   "GrossMargin_prev_%": 47.7,
+   "AssetTurnover_curr": 1.38,
+   "AssetTurnover_prev": 1.027
+  }
+ },
+ "full2": {
+  "symbol": "SYM",
+  "f_score": 4,
+  "interpretation": "MODERATE \u2014 neutral stance",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 0,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 1,
+   "F6_CurrentRatio_up": 0,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 0,
+   "F9_AssetTurnover_up": 0
+  },
+  "details": {
+   "ROA_current_%": 45.74,
+   "OCF_current_Cr": 18.38,
+   "ROA_prev_%": 62.16,
+   "LTD_ratio_curr_%": 52.22,
+   "LTD_ratio_prev_%": 83.08,
+   "CurrentRatio_curr": 1.48,
+   "CurrentRatio_prev": 2.87,
+   "GrossMargin_curr_%": 65.17,
+   "GrossMargin_prev_%": 93.3,
+   "AssetTurnover_curr": 0.718,
+   "AssetTurnover_prev": 1.045
+  }
+ },
+ "full3": {
+  "symbol": "SYM",
+  "f_score": 7,
+  "interpretation": "STRONG \u2014 likely outperformer",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 1,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 1,
+   "F6_CurrentRatio_up": 1,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 1,
+   "F9_AssetTurnover_up": 0
+  },
+  "details": {
+   "ROA_current_%": 67.85,
+   "OCF_current_Cr": 17.45,
+   "ROA_prev_%": 58.07,
+   "LTD_ratio_curr_%": 54.22,
+   "LTD_ratio_prev_%": 133.09,
+   "CurrentRatio_curr": 3.37,
+   "CurrentRatio_prev": 0.88,
+   "GrossMargin_curr_%": 249.83,
+   "GrossMargin_prev_%": 58.32,
+   "AssetTurnover_curr": 0.692,
+   "AssetTurnover_prev": 0.781
+  }
+ },
+ "two_cols": {
+  "symbol": "SYM",
+  "f_score": 4,
+  "interpretation": "MODERATE \u2014 neutral stance",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 1,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 0,
+   "F7_No_dilution": 0,
+   "F8_GrossMargin_up": 0,
+   "F9_AssetTurnover_up": 1
+  },
+  "details": {
+   "ROA_current_%": 105.93,
+   "OCF_current_Cr": 15.57,
+   "ROA_prev_%": 96.28,
+   "LTD_ratio_curr_%": 102.54,
+   "LTD_ratio_prev_%": 92.39,
+   "CurrentRatio_curr": 0.58,
+   "CurrentRatio_prev": 1.6,
+   "GrossMargin_curr_%": 71.83,
+   "GrossMargin_prev_%": 171.38,
+   "AssetTurnover_curr": 1.087,
+   "AssetTurnover_prev": 0.472
+  }
+ },
+ "one_col": {
+  "symbol": "SYM",
+  "f_score": 3,
+  "interpretation": "WEAK \u2014 avoid or short candidate",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 0,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 0,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 0,
+   "F9_AssetTurnover_up": 0
+  },
+  "details": {
+   "ROA_current_%": 293.94,
+   "OCF_current_Cr": 14.79,
+   "ROA_prev_%": "N/A",
+   "LTD_ratio_curr_%": 185.07,
+   "LTD_ratio_prev_%": "N/A",
+   "CurrentRatio_curr": 1.96,
+   "CurrentRatio_prev": "N/A",
+   "GrossMargin_curr_%": 74.36,
+   "GrossMargin_prev_%": "N/A",
+   "AssetTurnover_curr": 2.947,
+   "AssetTurnover_prev": "N/A"
+  }
+ },
+ "no_gross": {
+  "symbol": "SYM",
+  "f_score": 6,
+  "interpretation": "MODERATE \u2014 neutral stance",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 1,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 1,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 0,
+   "F9_AssetTurnover_up": 1
+  },
+  "details": {
+   "ROA_current_%": 254.65,
+   "OCF_current_Cr": 19.56,
+   "ROA_prev_%": 51.57,
+   "LTD_ratio_curr_%": 111.45,
+   "LTD_ratio_prev_%": 41.21,
+   "CurrentRatio_curr": 0.88,
+   "CurrentRatio_prev": 0.52,
+   "GrossMargin_curr_%": "N/A",
+   "GrossMargin_prev_%": "N/A",
+   "AssetTurnover_curr": 3.859,
+   "AssetTurnover_prev": 0.736
+  }
+ },
+ "no_bal": {
+  "symbol": "SYM",
+  "f_score": 4,
+  "interpretation": "MODERATE \u2014 neutral stance",
+  "component_scores": {
+   "F1_ROA_positive": 0,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 0,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 1,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 1,
+   "F9_AssetTurnover_up": 0
+  },
+  "details": {
+   "ROA_current_%": "N/A",
+   "OCF_current_Cr": 5.18,
+   "ROA_prev_%": "N/A",
+   "LTD_ratio_curr_%": "N/A",
+   "LTD_ratio_prev_%": "N/A",
+   "CurrentRatio_curr": 1.49,
+   "CurrentRatio_prev": 0.58,
+   "GrossMargin_curr_%": 178.44,
+   "GrossMargin_prev_%": 66.39,
+   "AssetTurnover_curr": "N/A",
+   "AssetTurnover_prev": "N/A"
+  }
+ },
+ "no_cf": {
+  "symbol": "SYM",
+  "f_score": 3,
+  "interpretation": "WEAK \u2014 avoid or short candidate",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 0,
+   "F3_ROA_improving": 0,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 0,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 0,
+   "F9_AssetTurnover_up": 1
+  },
+  "details": {
+   "ROA_current_%": 112.06,
+   "OCF_current_Cr": "N/A",
+   "ROA_prev_%": 142.89,
+   "LTD_ratio_curr_%": 211.23,
+   "LTD_ratio_prev_%": 52.32,
+   "CurrentRatio_curr": 0.37,
+   "CurrentRatio_prev": 0.66,
+   "GrossMargin_curr_%": 36.59,
+   "GrossMargin_prev_%": 112.13,
+   "AssetTurnover_curr": 2.042,
+   "AssetTurnover_prev": 0.784
+  }
+ },
+ "no_fcf": {
+  "symbol": "SYM",
+  "f_score": 6,
+  "interpretation": "MODERATE \u2014 neutral stance",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 1,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 1,
+   "F6_CurrentRatio_up": 0,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 0,
+   "F9_AssetTurnover_up": 1
+  },
+  "details": {
+   "ROA_current_%": 185.47,
+   "OCF_current_Cr": 10.66,
+   "ROA_prev_%": 59.71,
+   "LTD_ratio_curr_%": 94.47,
+   "LTD_ratio_prev_%": 107.44,
+   "CurrentRatio_curr": 0.97,
+   "CurrentRatio_prev": 2.95,
+   "GrossMargin_curr_%": 34.3,
+   "GrossMargin_prev_%": 61.71,
+   "AssetTurnover_curr": 1.617,
+   "AssetTurnover_prev": 1.202
+  }
+ },
+ "losses": {
+  "symbol": "SYM",
+  "f_score": 5,
+  "interpretation": "MODERATE \u2014 neutral stance",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 1,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 1,
+   "F7_No_dilution": 0,
+   "F8_GrossMargin_up": 0,
+   "F9_AssetTurnover_up": 1
+  },
+  "details": {
+   "ROA_current_%": 269.55,
+   "OCF_current_Cr": 17.56,
+   "ROA_prev_%": -50.14,
+   "LTD_ratio_curr_%": 116.96,
+   "LTD_ratio_prev_%": 109.98,
+   "CurrentRatio_curr": 1.28,
+   "CurrentRatio_prev": 0.65,
+   "GrossMargin_curr_%": 89.68,
+   "GrossMargin_prev_%": 274.96,
+   "AssetTurnover_curr": 1.769,
+   "AssetTurnover_prev": 0.435
+  }
+ },
+ "no_info": {
+  "symbol": "SYM",
+  "f_score": 4,
+  "interpretation": "MODERATE \u2014 neutral stance",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 0,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 0,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 1,
+   "F9_AssetTurnover_up": 0
+  },
+  "details": {
+   "ROA_current_%": 46.02,
+   "OCF_current_Cr": 5.5,
+   "ROA_prev_%": 98.45,
+   "LTD_ratio_curr_%": 130.94,
+   "LTD_ratio_prev_%": 63.6,
+   "CurrentRatio_curr": 0.57,
+   "CurrentRatio_prev": 2.0,
+   "GrossMargin_curr_%": 266.31,
+   "GrossMargin_prev_%": 75.72,
+   "AssetTurnover_curr": 0.479,
+   "AssetTurnover_prev": 1.492
+  }
+ },
+ "de_small": {
+  "symbol": "SYM",
+  "f_score": 3,
+  "interpretation": "WEAK \u2014 avoid or short candidate",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 0,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 0,
+   "F7_No_dilution": 0,
+   "F8_GrossMargin_up": 0,
+   "F9_AssetTurnover_up": 1
+  },
+  "details": {
+   "ROA_current_%": 72.88,
+   "OCF_current_Cr": 11.29,
+   "ROA_prev_%": 101.53,
+   "LTD_ratio_curr_%": 125.25,
+   "LTD_ratio_prev_%": 101.52,
+   "CurrentRatio_curr": 0.54,
+   "CurrentRatio_prev": 2.3,
+   "GrossMargin_curr_%": 179.98,
+   "GrossMargin_prev_%": 211.3,
+   "AssetTurnover_curr": 0.852,
+   "AssetTurnover_prev": 0.447
+  }
+ },
+ "fast_cap": {
+  "symbol": "SYM",
+  "f_score": 4,
+  "interpretation": "MODERATE \u2014 neutral stance",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 0,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 1,
+   "F6_CurrentRatio_up": 0,
+   "F7_No_dilution": 0,
+   "F8_GrossMargin_up": 1,
+   "F9_AssetTurnover_up": 0
+  },
+  "details": {
+   "ROA_current_%": 140.78,
+   "OCF_current_Cr": 14.9,
+   "ROA_prev_%": 263.92,
+   "LTD_ratio_curr_%": 68.34,
+   "LTD_ratio_prev_%": 246.47,
+   "CurrentRatio_curr": 0.82,
+   "CurrentRatio_prev": 2.94,
+   "GrossMargin_curr_%": 302.96,
+   "GrossMargin_prev_%": 103.0,
+   "AssetTurnover_curr": 0.482,
+   "AssetTurnover_prev": 2.842
+  }
+ },
+ "no_inc": {
+  "error": "No financial data found for SYM.NS on Yahoo Finance"
+ },
+ "no_ltd": {
+  "symbol": "SYM",
+  "f_score": 4,
+  "interpretation": "MODERATE \u2014 neutral stance",
+  "component_scores": {
+   "F1_ROA_positive": 1,
+   "F2_OCF_positive": 1,
+   "F3_ROA_improving": 0,
+   "F4_Accruals": 0,
+   "F5_Leverage_down": 0,
+   "F6_CurrentRatio_up": 0,
+   "F7_No_dilution": 1,
+   "F8_GrossMargin_up": 0,
+   "F9_AssetTurnover_up": 1
+  },
+  "details": {
+   "ROA_current_%": 141.9,
+   "OCF_current_Cr": 8.9,
+   "ROA_prev_%": 203.36,
+   "LTD_ratio_curr_%": "N/A",
+   "LTD_ratio_prev_%": "N/A",
+   "CurrentRatio_curr": 0.61,
+   "CurrentRatio_prev": 1.11,
+   "GrossMargin_curr_%": 87.34,
+   "GrossMargin_prev_%": 273.0,
+   "AssetTurnover_curr": 1.251,
+   "AssetTurnover_prev": 0.849
+  }
+ }
+}

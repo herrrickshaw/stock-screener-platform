@@ -1,0 +1,341 @@
+{
+ "full": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "5/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 0,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": -4.58,
+   "Revenue_years": 3,
+   "ROE_avg_%": 189.95,
+   "ROE_min_%": 60.24,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 176.0
+  }
+ },
+ "full2": {
+  "symbol": "SYM",
+  "qualifies": true,
+  "score": "6/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 1,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": 33.94,
+   "Revenue_years": 3,
+   "ROE_avg_%": 72.32,
+   "ROE_min_%": 55.12,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 153.9
+  }
+ },
+ "full3": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "5/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 0,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": -4.65,
+   "Revenue_years": 3,
+   "ROE_avg_%": 98.18,
+   "ROE_min_%": 53.03,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 114.3
+  }
+ },
+ "two_cols": {
+  "symbol": "SYM",
+  "qualifies": true,
+  "score": "6/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 1,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": 216.19,
+   "Revenue_years": 1,
+   "ROE_avg_%": 169.71,
+   "ROE_min_%": 89.65,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 0,
+   "Years_analysed": 2,
+   "FCF_latest_$M": 149.8
+  }
+ },
+ "one_col": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "5/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 0,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": "N/A",
+   "ROE_avg_%": 85.43,
+   "ROE_min_%": 85.43,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 0,
+   "Years_analysed": 1,
+   "FCF_latest_$M": 85.2
+  }
+ },
+ "no_gross": {
+  "symbol": "SYM",
+  "qualifies": true,
+  "score": "6/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 1,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": 25.81,
+   "Revenue_years": 3,
+   "ROE_avg_%": 85.44,
+   "ROE_min_%": 55.45,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 96.8
+  }
+ },
+ "no_bal": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "5/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 0,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": -18.13,
+   "Revenue_years": 3,
+   "ROE_avg_%": 118.63,
+   "ROE_min_%": 96.16,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 105.4
+  }
+ },
+ "no_cf": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "5/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 1,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 0
+  },
+  "details": {
+   "Revenue_CAGR_%": 19.44,
+   "Revenue_years": 3,
+   "ROE_avg_%": 138.57,
+   "ROE_min_%": 54.32,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": "N/A"
+  }
+ },
+ "no_fcf": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "4/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 0,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 0
+  },
+  "details": {
+   "Revenue_CAGR_%": -5.7,
+   "Revenue_years": 3,
+   "ROE_avg_%": 177.27,
+   "ROE_min_%": 47.85,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": -83.1
+  }
+ },
+ "losses": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "4/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 0,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 0,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": -10.37,
+   "Revenue_years": 3,
+   "ROE_avg_%": 98.17,
+   "ROE_min_%": -92.92,
+   "Debt_to_Equity": 0.45,
+   "Market_Cap": "$2.00B",
+   "Loss_years": 1,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 118.6
+  }
+ },
+ "no_info": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "3/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 0,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 0,
+   "C4_MCap_ge1B": 0,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": 1.29,
+   "Revenue_years": 3,
+   "ROE_avg_%": 85.71,
+   "ROE_min_%": 45.88,
+   "Debt_to_Equity": 1.31,
+   "Market_Cap": "N/A",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 185.9
+  }
+ },
+ "de_small": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "5/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 1,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 0,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": 15.07,
+   "Revenue_years": 3,
+   "ROE_avg_%": 107.95,
+   "ROE_min_%": 54.92,
+   "Debt_to_Equity": 0.4,
+   "Market_Cap": "$800.00M",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 187.2
+  }
+ },
+ "fast_cap": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "5/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 0,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 1,
+   "C4_MCap_ge1B": 1,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": 6.91,
+   "Revenue_years": 3,
+   "ROE_avg_%": 155.11,
+   "ROE_min_%": 46.04,
+   "Debt_to_Equity": 0.54,
+   "Market_Cap": "$5.00B",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 68.7
+  }
+ },
+ "no_inc": {
+  "symbol": "SYM",
+  "error": "No income statement data available"
+ },
+ "no_ltd": {
+  "symbol": "SYM",
+  "qualifies": false,
+  "score": "4/6",
+  "criteria": {
+   "C1_Revenue_CAGR_gt10": 1,
+   "C2_ROE_gt15": 1,
+   "C3_LowDebt": 0,
+   "C4_MCap_ge1B": 0,
+   "C5_NoProfitLoss": 1,
+   "C6_FreeCashFlow_pos": 1
+  },
+  "details": {
+   "Revenue_CAGR_%": 10.06,
+   "Revenue_years": 3,
+   "ROE_avg_%": 155.49,
+   "ROE_min_%": 74.83,
+   "Debt_to_Equity": "N/A",
+   "Market_Cap": "N/A",
+   "Loss_years": 0,
+   "Years_analysed": 4,
+   "FCF_latest_$M": 120.2
+  }
+ }
+}

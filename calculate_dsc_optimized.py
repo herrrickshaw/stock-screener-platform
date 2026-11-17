@@ -85,7 +85,7 @@ class OptimizedDSCCalculator:
                     if debt_history and isinstance(debt_history, (list, tuple)) and len(debt_history) > 0:
                         try:
                             current_debt = pd.to_numeric(debt_history[0], errors='coerce')
-                        except:
+                        except (TypeError, ValueError):
                             current_debt = np.nan
                     else:
                         current_debt = np.nan

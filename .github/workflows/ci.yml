@@ -1,0 +1,26 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install pytest ruff pandas numpy requests xlrd fastapi
+      - name: Lint (refactored surface)
+        run: ruff check backend/scanners backend/fetchers/history.py backend/fetchers/tickers.py backend/fetchers/providers/base.py backend/db/quote_updater.py backend/db/bulk_fetcher.py backend/routers/cassandra_router.py Downloads/code/python_files/darvas_box.py Downloads/code/python_files/piotroski_core.py Downloads/code/python_files/coffee_can_core.py put_call_parity tests
+      - name: Compile
+        run: python -m compileall -q backend put_call_parity
+      - name: Tests (synthetic frames, no network)
+        run: pytest -q

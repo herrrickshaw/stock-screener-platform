@@ -66,7 +66,7 @@ class QuarterlyAnalyzer:
                         qtr_metrics['oi_margin'] = (operating_income / total_revenue * 100)
                     if total_revenue and net_income:
                         qtr_metrics['ni_margin'] = (net_income / total_revenue * 100)
-                except:
+                except (TypeError, ZeroDivisionError, ValueError):
                     pass
 
                 # Cash flow
@@ -80,7 +80,7 @@ class QuarterlyAnalyzer:
                     if ocf and capex:
                         qtr_metrics['fcf'] = ocf - abs(capex)
                         qtr_metrics['fcf_margin'] = (qtr_metrics['fcf'] / total_revenue * 100) if total_revenue else None
-                except:
+                except (TypeError, ZeroDivisionError, ValueError):
                     pass
 
                 # Balance sheet
@@ -99,7 +99,7 @@ class QuarterlyAnalyzer:
                         qtr_metrics['de_ratio'] = total_debt / total_equity if total_debt else 0
                     if total_assets and total_assets > 0:
                         qtr_metrics['asset_turnover'] = total_revenue / total_assets if total_revenue else None
-                except:
+                except (TypeError, ZeroDivisionError, ValueError):
                     pass
 
                 # ROIC calculation (NEW - CRITICAL PARAMETER)
@@ -111,7 +111,7 @@ class QuarterlyAnalyzer:
                         invested_capital = total_debt + total_equity
                         if invested_capital > 0:
                             qtr_metrics['roic'] = (nopat / invested_capital * 100)
-                except:
+                except (TypeError, ZeroDivisionError, ValueError):
                     pass
 
                 data['quarters'].append(qtr_metrics)

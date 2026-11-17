@@ -900,7 +900,7 @@ class ScreenerEngine:
                 metric_value = metrics.get(screen["metric"], 0)
                 if screen["condition"](metric_value):
                     results[symbol] = metrics.get("price", 0)
-            except:
+            except (KeyError, TypeError, ValueError, ZeroDivisionError):
                 pass
 
         return results

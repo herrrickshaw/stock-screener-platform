@@ -877,7 +877,7 @@ def _write_excel_report(results: list, include_scans: bool = False):
             try:
                 if len(str(cell.value)) > max_len:
                     max_len = len(str(cell.value))
-            except:
+            except (TypeError, ValueError):
                 pass
         ws_summary.column_dimensions[col[0].column_letter].width = max_len + 2
 

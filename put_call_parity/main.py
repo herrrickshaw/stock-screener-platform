@@ -18,8 +18,6 @@ Environment variables (required before running live):
 
 import argparse
 import logging
-import os
-import sys
 
 
 def _parse_args():
