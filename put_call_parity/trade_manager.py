@@ -99,8 +99,12 @@ class TradeManager:
         Places all three legs simultaneously (market orders for speed).
         Returns a position_id on success, None on failure.
 
-        Direction: SHORT_CALL_LONG_PUT  → sell call, buy put, sell futures
-        Direction: LONG_CALL_SHORT_PUT  → buy call, sell put, buy futures
+        Direction: SHORT_CALL_LONG_PUT  → sell call, buy put, buy futures  (conversion)
+        Direction: LONG_CALL_SHORT_PUT  → buy call, sell put, sell futures (reversal)
+
+        The option pair is a synthetic futures position (short call + long put is a
+        synthetic short), so the futures leg must take the OPPOSITE side to hedge it.
+        Locked-in value at expiry: conversion = (C - P)e^(rT) + K - F, reversal = its negative.
         """
         cfg = INSTRUMENTS[signal.instrument]
         qty = signal.lots * cfg.lot_size
@@ -110,11 +114,11 @@ class TradeManager:
         if signal.direction == "SHORT_CALL_LONG_PUT":
             call_side = "SELL"
             put_side  = "BUY"
-            fut_side  = "SELL"
+            fut_side  = "BUY"
         else:
             call_side = "BUY"
             put_side  = "SELL"
-            fut_side  = "BUY"
+            fut_side  = "SELL"
 
         tag = f"{tag_prefix}_{signal.instrument}_{int(signal.strike)}"
 
@@ -198,11 +202,11 @@ class TradeManager:
         if position["direction"] == "SHORT_CALL_LONG_PUT":
             call_exit = "BUY"
             put_exit  = "SELL"
-            fut_exit  = "BUY"
+            fut_exit  = "SELL"
         else:
             call_exit = "SELL"
             put_exit  = "BUY"
-            fut_exit  = "SELL"
+            fut_exit  = "BUY"
 
         tag = f"EXIT_{position_id[:20]}"
 
@@ -258,8 +262,8 @@ class TradeManager:
                            tag: str):
         """Attempt to reverse any legs that were already filled."""
         reversal_map = {
-            "SHORT_CALL_LONG_PUT": {"call": "BUY", "put": "SELL", "fut": "BUY"},
-            "LONG_CALL_SHORT_PUT": {"call": "SELL", "put": "BUY", "fut": "SELL"},
+            "SHORT_CALL_LONG_PUT": {"call": "BUY", "put": "SELL", "fut": "SELL"},
+            "LONG_CALL_SHORT_PUT": {"call": "SELL", "put": "BUY", "fut": "BUY"},
         }
         reversal = reversal_map.get(signal.direction, {})
         symbols  = {
@@ -294,15 +298,15 @@ class TradeManager:
         qty = position["qty"]
 
         if position["direction"] == "SHORT_CALL_LONG_PUT":
-            # Sold call, bought put, sold futures
+            # Sold call, bought put, bought futures
             call_pnl = (position["entry_call_price"] - exit_prices.get("call", 0)) * qty
             put_pnl  = (exit_prices.get("put", 0) - position["entry_put_price"]) * qty
-            fut_pnl  = (position["entry_futures_price"] - exit_prices.get("fut", 0)) * qty
+            fut_pnl  = (exit_prices.get("fut", 0) - position["entry_futures_price"]) * qty
         else:
-            # Bought call, sold put, bought futures
+            # Bought call, sold put, sold futures
             call_pnl = (exit_prices.get("call", 0) - position["entry_call_price"]) * qty
             put_pnl  = (position["entry_put_price"] - exit_prices.get("put", 0)) * qty
-            fut_pnl  = (exit_prices.get("fut", 0) - position["entry_futures_price"]) * qty
+            fut_pnl  = (position["entry_futures_price"] - exit_prices.get("fut", 0)) * qty
 
         return call_pnl + put_pnl + fut_pnl
 
