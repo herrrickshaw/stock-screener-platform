@@ -346,3 +346,26 @@ def test_parse_excel_other_market(nse, mkt):
 def test_india_name_and_suffixed_lookups_resolve(nse):
     assert mdb.lookup("TCS.NS", "india")["yf_ticker"] == "TCS.NS"
     assert mdb.lookup_by_name("Infosys Limited", "india")["yf_ticker"] == "INFY.NS"
+
+
+def test_remaining_markets_load_their_own_files(mkt):
+    (mkt / "hk_list.csv").write_text("yf_ticker,name,symbol,exchange\n0700.HK,Tencent,0700,HKEX\n")
+    (mkt / "canada_list.csv").write_text("yf_ticker,name,symbol,exchange\nSHOP.TO,Shopify,SHOP,TSX\n")
+    assert mdb.lookup("0700", "hong_kong")["name"] == "Tencent"
+    assert mdb.lookup("SHOP", "canada")["yf_ticker"] == "SHOP.TO"
+    assert mdb.db_size("hong_kong") == 1 and mdb.db_size("canada") == 1
+
+
+def test_extract_from_text_europe_pattern(mkt):
+    out = mdb.extract_from_text("holding ADS.DE and ZZZ.PA", "europe")
+    assert [o["yf_ticker"] for o in out] == ["ADS.DE"]
+
+
+@pytest.mark.xfail(
+    strict=True, raises=AssertionError,
+    reason="market_db.py _PATTERNS['europe'] requires a two-letter exchange suffix "
+           "(r'\\.[A-Z]{2}'), so London tickers such as RIO.L (the .L suffix covers 436 of the 966 "
+           "listed European stocks) are never found in free text.")
+def test_extract_from_text_finds_one_letter_suffix_london_tickers(mkt):
+    out = mdb.extract_from_text("holding RIO.L", "europe")
+    assert [o["yf_ticker"] for o in out] == ["RIO.L"]
