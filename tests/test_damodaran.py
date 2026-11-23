@@ -239,3 +239,8 @@ def test_get_all_benchmarks_sorted_by_industry(india):
 def test_real_data_known_sector_has_positive_pe():
     pe = dm.get_sector_pe("IT")
     assert pe is not None and pe > 0 and not math.isnan(pe)
+
+
+def test_lookup_industry_accepts_a_moderately_similar_name(india):
+    # similarity to 'Auto Parts' is ~0.76: above the 0.5 cutoff, so it is matched
+    assert dm.lookup_industry("Autoparts X") == "Auto Parts"

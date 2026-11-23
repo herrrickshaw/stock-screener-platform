@@ -679,3 +679,41 @@ def test_multi_screen_default_has_six_real_specs():
     m = sp.MultiScreenSpec()
     assert m.min_screens == 3 and len(m._specs) == 6
     assert not m.is_satisfied_by(cand())                    # an empty candidate passes nothing
+
+
+def test_regime_sideways_band_edge_is_inclusive():
+    # dma_period=2: DMA of the last two closes (98, 102) is 100, so pct_from is exactly +2.0
+    idx = _index([100.0, 98.0, 102.0])
+    assert idx.classify_regime(dma_period=2, slope_bars=1, sideways_pct=2.0) is MarketRegime.SIDEWAYS
+    assert idx.classify_regime(dma_period=2, slope_bars=1, sideways_pct=1.99) is MarketRegime.BULL
+
+
+def test_coffee_can_cagr_exactly_at_threshold_passes():
+    inc = fin({"Total Revenue": [200.0, 100.0], "EBIT": [60.0, 45.0], "Net Income": [40.0, 30.0]})
+    bal = fin({"Total Assets": [200.0, 180.0], "Current Liabilities": [50.0, 50.0]})
+    c = cand(income_stmt=inc, balance_sheet=bal, market_cap=6e9, debt_to_equity=0.5)
+    assert sp.CoffeeCanSpec(min_cagr=100.0).is_satisfied_by(c)          # CAGR is exactly 100.0
+    assert not sp.CoffeeCanSpec(min_cagr=100.1).is_satisfied_by(c)
+
+
+def test_coffee_can_debt_to_equity_of_exactly_ten_is_not_rescaled():
+    assert not sp.CoffeeCanSpec().is_satisfied_by(coffee_candidate(debt_to_equity=10.0))     # treated as 10x
+    assert sp.CoffeeCanSpec().is_satisfied_by(coffee_candidate(debt_to_equity=10.5))      # > 10: percent form
+
+
+def test_golden_cross_is_evaluated_at_exactly_205_bars():
+    spec = sp.GoldenCrossSpec()
+    series = [100.0] * 160 + [90.0] * 45
+    crossing = None
+    for k in range(60):
+        series.append(500.0)
+        s = pd.Series(series)
+        d50, d200 = s.rolling(50).mean(), s.rolling(200).mean()
+        if d50.iloc[-2] < d200.iloc[-2] and d50.iloc[-1] > d200.iloc[-1]:
+            crossing = pd.DataFrame({"Close": list(series)})
+            break
+    assert crossing is not None
+    assert spec.is_satisfied_by(cand(ohlc_df=crossing, bar_count=205))
+    assert not spec.is_satisfied_by(cand(ohlc_df=crossing, bar_count=204))
+    assert sp.DMA50AboveDMA200Spec().is_satisfied_by(cand(ohlc_df=crossing, bar_count=205))
+    assert not sp.DMA50AboveDMA200Spec().is_satisfied_by(cand(ohlc_df=crossing, bar_count=204))

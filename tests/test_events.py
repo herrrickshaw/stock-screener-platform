@@ -531,3 +531,9 @@ def test_provider_config_reads_environment_at_import(monkeypatch):
     finally:
         monkeypatch.undo()
         importlib.reload(prov)
+
+
+def test_rsi_overbought_does_not_refire_when_previous_reading_was_exactly_70():
+    ev = pm._detect_events("T", _state(prev_rsi=70.0), {"price": 100.0, "prev_close": 100.0,
+                                                        "rsi": 75.0, "volume": 0})
+    assert ev == []

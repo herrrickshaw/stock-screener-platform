@@ -263,3 +263,9 @@ def test_unevaluated_criteria_are_reported_as_none_not_true():
     r = scan_one(ds.scan_darvas)                      # no ROE / MACD / ... columns at all
     assert r["criteria"]["buffett_roe"] is None
     assert r["criteria"]["macd_bull"] is None
+
+
+def test_darvas_score_of_exactly_four_is_watch_not_buy():
+    # not near the high (30 % below), above EMA50 (+2), range 0.7 (+1), RSI 55 (+1) -> 4
+    r = scan_one(ds.scan_darvas, cmp=70.0, high_52w=100.0, low_52w=0.0, ema_50=60.0, rsi=55.0)
+    assert r["score"] == 4 and r["signal"] == "WATCH"
