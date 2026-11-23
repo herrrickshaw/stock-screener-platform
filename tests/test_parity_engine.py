@@ -349,3 +349,36 @@ def test_check_exit_theoretical_uses_current_futures_and_signal_strike(frozen_to
     assert ok and "dev=0.00" in why
     ok, why = _exit(e, (60, 60), (10, 10), 150.0, strike=120.0)   # theo 30 ; dev 20 -> hold
     assert (ok, why) == (False, "")
+
+
+# --------------------------------------------- min_deviation boundary (cheap instrument)
+@pytest.fixture
+def cheap_instrument(monkeypatch):
+    """A contract whose round-trip cost is ~0.1/unit, so min_deviation (5.0) is the binding gate."""
+    cfg = InstrumentConfig(name="T", exchange="MCX", segment="MCX-FO", underlying_symbol="T",
+                           futures_symbol="T", option_symbol="T", lot_size=100_000, tick_size=0.01,
+                           max_lots=10, min_deviation=5.0, exit_fraction=0.2, stop_loss_multiple=2.0)
+    monkeypatch.setitem(INSTRUMENTS, "TEST", cfg)
+
+
+def _cheap(call_mid, put_mid):
+    chain = _chain(100, call_mid, call_mid, put_mid, put_mid)
+    return ParityEngine(r=0.0).scan("TEST", chain, 100.0, "F", "2026-11-29")
+
+
+def test_min_deviation_gate_is_strict_in_both_directions(frozen_today, cheap_instrument):
+    assert _cheap(15.0, 10.0) == []                    # dev exactly +5
+    assert _cheap(10.0, 15.0) == []                    # dev exactly -5
+    up = _cheap(15.01, 10.0)
+    down = _cheap(10.0, 15.01)
+    assert [s.direction for s in up] == ["SHORT_CALL_LONG_PUT"]
+    assert [s.direction for s in down] == ["LONG_CALL_SHORT_PUT"]
+    assert up[0].lots == 1 and up[0].net_deviation == pytest.approx(5.01 - up[0].transaction_cost)
+
+
+def test_scan_uses_mid_of_bid_and_ask_for_both_legs(frozen_today):
+    # call 480/520 (mid 500), put 100/200 (mid 150): dev = 350 - 150 = +200 exactly as with 500/150
+    sigs = _scan(_chain(49_850, 480, 520, 100, 200))
+    assert len(sigs) == 1
+    assert (sigs[0].call_mid, sigs[0].put_mid) == (500.0, 150.0)
+    assert sigs[0].raw_deviation == pytest.approx(200.0)

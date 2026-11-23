@@ -349,3 +349,15 @@ def test_rejected_leg_is_not_unwound(tmp_path, no_sleep):
     assert mgr.enter_trade(_signal("SHORT_CALL_LONG_PUT")) is None
     unwound = [o["symbol"] for o in broker.orders if o["tag"].startswith("UNWIND_")]
     assert unwound == ["CE"]            # only the leg that actually filled needs reversing
+
+
+@pytest.mark.parametrize("direction, expected", [
+    ("SHORT_CALL_LONG_PUT", {"CE": "BUY", "PE": "SELL", "FUT": "SELL"}),
+    ("LONG_CALL_SHORT_PUT", {"CE": "SELL", "PE": "BUY", "FUT": "BUY"}),
+])
+def test_emergency_unwind_reverses_each_listed_leg(tmp_path, direction, expected):
+    mgr, broker, _ = _manager(tmp_path)
+    mgr._emergency_unwind({"call": "1", "put": "2", "fut": "3"}, {}, _signal(direction),
+                          INSTRUMENTS["BANKNIFTY"], 30, "tag")
+    assert {o["symbol"]: o["side"] for o in broker.orders} == expected
+    assert [o["symbol"] for o in broker.orders] == ["CE", "PE", "FUT"]
