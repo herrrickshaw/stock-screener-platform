@@ -1,0 +1,33 @@
+[run]
+branch = False
+source =
+    put_call_parity
+    backend
+    Downloads/code/stock_ddd
+omit =
+    */tests/*
+    */conftest.py
+    */test_*.py
+    */__init__.py
+    */__pycache__/*
+    # Live broker SDK adapters and the live-trading CLI (need kiteconnect/upstox/angel + a funded account)
+    put_call_parity/broker.py
+    put_call_parity/main.py
+    # Network / database / web-server layers: yfinance, vendor REST APIs, Cassandra, FastAPI routers, APScheduler
+    backend/fetchers/*
+    backend/routers/*
+    backend/db/*
+    backend/main.py
+    backend/scheduler.py
+    # PDF text extraction needs pdfplumber on real PDFs
+    backend/parsers/pdf_parser.py
+    # DDD layers that wrap yfinance / Parquet caches / report writers
+    Downloads/code/stock_ddd/infrastructure/*
+    Downloads/code/stock_ddd/application/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    @abstractmethod
